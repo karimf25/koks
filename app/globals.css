@@ -1,26 +1,198 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
+@custom-variant dark (&:is(.dark *));
+
+/* ── Midnight Glass Design System ───────────────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Backgrounds */
+  --bg-base:      #0A1420;
+  --bg-deep:      #092634;
+  --surface:      #16242F;
+  --surface-2:    #223240;
+
+  /* Glass */
+  --glass:        rgba(255,255,255,0.05);
+  --glass-strong: rgba(255,255,255,0.09);
+  --glass-border: rgba(255,255,255,0.10);
+  --glass-blur:   20px;
+
+  /* Brand blues */
+  --blue:   #004E72;
+  --slate:  #465E73;
+  --teal:   #20878E;
+  --ice:    #92C4C6;
+
+  /* Orange = "this matters NOW" */
+  --accent:     #F27405;
+  --accent-hot: #FF6E42;
+  --amber:      #D98D30;
+  --gold:       #F3C375;
+
+  /* Text */
+  --text:   #F2F5F8;
+  --text-2: #9FB3C4;
+  --text-3: #5C7287;
+  --cream:  #F6E3D6;
+
+  /* Radius */
+  --radius: 0.875rem;
+
+  /* shadcn token bridge — everything maps to our palette */
+  --background:            var(--bg-base);
+  --foreground:            var(--text);
+  --card:                  var(--surface);
+  --card-foreground:       var(--text);
+  --popover:               var(--surface-2);
+  --popover-foreground:    var(--text);
+  --primary:               var(--accent);
+  --primary-foreground:    #fff;
+  --secondary:             var(--surface-2);
+  --secondary-foreground:  var(--text-2);
+  --muted:                 var(--surface);
+  --muted-foreground:      var(--text-3);
+  --accent:                var(--surface-2);
+  --accent-foreground:     var(--text);
+  --destructive:           #E53E3E;
+  --border:                var(--glass-border);
+  --input:                 var(--glass-border);
+  --ring:                  var(--ice);
+  --radius-sm:             calc(var(--radius) * 0.6);
+  --radius-md:             calc(var(--radius) * 0.8);
+  --radius-lg:             var(--radius);
+  --radius-xl:             calc(var(--radius) * 1.4);
+  --radius-2xl:            calc(var(--radius) * 1.8);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background:       var(--background);
+  --color-foreground:       var(--foreground);
+  --color-card:             var(--card);
+  --color-card-foreground:  var(--card-foreground);
+  --color-primary:          var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary:        var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted:            var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border:           var(--border);
+  --color-input:            var(--input);
+  --color-ring:             var(--ring);
+  --color-destructive:      var(--destructive);
+  --font-sans: var(--font-inter), -apple-system, "SF Pro Display", system-ui, sans-serif;
+  --font-mono: var(--font-mono), "SF Mono", "JetBrains Mono", monospace;
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-2xl: var(--radius-2xl);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  *, *::before, *::after {
+    @apply border-border outline-ring/50;
+    box-sizing: border-box;
+  }
+
+  html {
+    color-scheme: dark;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: var(--bg-base);
+    color: var(--text);
+    font-family: var(--font-sans);
+    min-height: 100dvh;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: var(--glass-border);
+    border-radius: 99px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: var(--slate); }
+
+  /* Focus rings — ice-colored */
+  :focus-visible {
+    outline: 2px solid var(--ice);
+    outline-offset: 2px;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ── Glass utility classes ───────────────────────────────────────────────── */
+@layer utilities {
+  .glass {
+    background: var(--glass);
+    backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.06),
+      0 4px 24px rgba(0,0,0,0.4);
+  }
+
+  .glass-card {
+    background: var(--glass);
+    backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+    border: 1px solid var(--glass-border);
+    border-radius: 14px;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.05),
+      0 2px 12px rgba(0,0,0,0.3);
+  }
+
+  .glass-hover {
+    transition: background 200ms, transform 150ms;
+  }
+  .glass-hover:hover {
+    background: var(--glass-strong);
+    transform: scale(1.01);
+  }
+  .glass-hover:active {
+    transform: scale(0.98);
+  }
+
+  .text-gradient-orange {
+    background: linear-gradient(135deg, var(--accent), var(--amber));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .glow-orange {
+    box-shadow: 0 0 20px rgba(242, 116, 5, 0.3), 0 0 60px rgba(242, 116, 5, 0.1);
+  }
+
+  .glow-teal {
+    box-shadow: 0 0 20px rgba(32, 135, 142, 0.3);
+  }
+}
+
+/* ── Ambient background gradient ─────────────────────────────────────────── */
+.ambient-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(ellipse at top, var(--bg-deep) 0%, var(--bg-base) 60%);
+  pointer-events: none;
+}
+
+.ambient-blob {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: -1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient-blob { animation: none !important; }
+  * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
 }
