@@ -1,20 +1,25 @@
 import { Metadata } from "next";
-import { GlassPanel } from "@/components/glass";
-import { GitBranch } from "lucide-react";
+import { getMindmaps } from "@/lib/mindmaps";
+import { getProjects } from "@/lib/projects";
+import { serializeMindmap, serializeProject } from "@/lib/serialize";
+import { MindmapGrid } from "./_components/MindmapGrid";
 
 export const metadata: Metadata = { title: "Mind Maps — LifeOS" };
 
-export default function MindmapsPage() {
+export default async function MindmapsPage() {
+  const [rawMaps, rawProjects] = await Promise.all([getMindmaps(), getProjects()]);
+  const maps = rawMaps.map(serializeMindmap);
+  const projects = rawProjects.map(serializeProject);
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-[var(--cream)]">Mind Maps</h1>
-        <p className="text-sm text-[var(--text-3)] mt-1">Visual thinking with React Flow</p>
+        <p className="text-sm text-[var(--text-3)] mt-1">
+          {maps.length} map{maps.length !== 1 ? "s" : ""} · Visual thinking canvas
+        </p>
       </div>
-      <GlassPanel className="flex flex-col items-center justify-center py-20 gap-3">
-        <GitBranch className="w-8 h-8 text-[var(--text-3)]" />
-        <p className="text-[var(--text-3)] text-sm">Mind maps coming in Phase 3</p>
-      </GlassPanel>
+      <MindmapGrid initialMaps={maps} projects={projects} />
     </div>
   );
 }

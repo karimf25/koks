@@ -5,6 +5,7 @@ import { getProjects } from "@/lib/projects";
 import { getIdeas, createIdea } from "@/lib/ideas";
 import { getEvents } from "@/lib/events";
 import { getMemoryFiles, createMemoryFile, updateMemoryFile } from "@/lib/memory";
+import { getNotes, getNote, createNote, updateNote } from "@/lib/notes";
 import { getLatestFocusRun } from "@/lib/focus";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -106,6 +107,28 @@ const tools: Anthropic.Tool[] = [
     description: "Get the latest focus run briefing",
     input_schema: { type: "object", properties: {} },
   },
+  {
+    name: "list_notes",
+    description: "List notes, optionally filtered by a search term",
+    input_schema: {
+      type: "object",
+      properties: { search: { type: "string" } },
+    },
+  },
+  {
+    name: "save_note",
+    description: "Create a new note, or update an existing one when an id is provided",
+    input_schema: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: "Provide to update an existing note" },
+        title: { type: "string" },
+        content: { type: "string", description: "Markdown body" },
+        projectId: { type: "string" },
+      },
+      required: ["title"],
+    },
+  },
 ];
 
 async function executeTool(name: string, input: Record<string, any>): Promise<string> {
@@ -141,6 +164,24 @@ async function executeTool(name: string, input: Record<string, any>): Promise<st
       }
       case "get_focus":
         return JSON.stringify(await getLatestFocusRun());
+      case "list_notes":
+        return JSON.stringify(await getNotes({ search: input.search }));
+      case "save_note": {
+        if (input.id) {
+          const existing = await getNote(input.id);
+          if (!existing) return JSON.stringify({ error: "Note not found" });
+          return JSON.stringify(
+            await updateNote(input.id, {
+              title: input.title,
+              content: input.content,
+              projectId: input.projectId,
+            })
+          );
+        }
+        return JSON.stringify(
+          await createNote({ title: input.title, content: input.content, projectId: input.projectId })
+        );
+      }
       default:
         return JSON.stringify({ error: "Unknown tool" });
     }

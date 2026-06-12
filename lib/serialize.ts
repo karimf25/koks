@@ -1,4 +1,4 @@
-import type { Task, Project, Event, FocusRun, Idea, MemoryFile } from "@/db";
+import type { Task, Project, Event, FocusRun, Idea, MemoryFile, Note, Mindmap } from "@/db";
 
 export type SerializedTask = Omit<Task, "dueDate" | "createdAt" | "updatedAt" | "completedAt"> & {
   dueDate: string | null;
@@ -79,5 +79,23 @@ export type SerializedMemoryFile = Omit<MemoryFile, "createdAt" | "updatedAt"> &
 };
 
 export function serializeMemoryFile(m: MemoryFile): SerializedMemoryFile {
+  return { ...m, createdAt: isoReq(m.createdAt), updatedAt: isoReq(m.updatedAt) };
+}
+
+export type SerializedNote = Omit<Note, "createdAt" | "updatedAt"> & {
+  createdAt: string;
+  updatedAt: string;
+};
+
+export function serializeNote(n: Note): SerializedNote {
+  return { ...n, createdAt: isoReq(n.createdAt), updatedAt: isoReq(n.updatedAt) };
+}
+
+export type SerializedMindmap = Omit<Mindmap, "createdAt" | "updatedAt"> & {
+  createdAt: string;
+  updatedAt: string;
+};
+
+export function serializeMindmap(m: Mindmap): SerializedMindmap {
   return { ...m, createdAt: isoReq(m.createdAt), updatedAt: isoReq(m.updatedAt) };
 }

@@ -10,6 +10,8 @@ import { getProjects, createProject } from "@/lib/projects";
 import { getIdeas, createIdea, updateIdea } from "@/lib/ideas";
 import { getEvents, getTodayEvents } from "@/lib/events";
 import { getMemoryFiles, getMemoryFileByPath, createMemoryFile, updateMemoryFile } from "@/lib/memory";
+import { getNotes, getNote, createNote, updateNote, deleteNote } from "@/lib/notes";
+import { getMindmaps, getMindmap, createMindmap } from "@/lib/mindmaps";
 import { getLatestFocusRun, runFocusEngine } from "@/lib/focus";
 
 // ── Tool definitions ─────────────────────────────────────────────────────────
@@ -163,6 +165,58 @@ const TOOLS = [
     description: "Run the AI focus engine (requires ANTHROPIC_API_KEY)",
     inputSchema: { type: "object", properties: {} },
   },
+  {
+    name: "list_notes",
+    description: "List notes with an optional search term",
+    inputSchema: {
+      type: "object",
+      properties: { search: { type: "string" } },
+    },
+  },
+  {
+    name: "read_note",
+    description: "Read a single note by id",
+    inputSchema: { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
+  },
+  {
+    name: "write_note",
+    description: "Create a note, or update one when an id is given",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+        title: { type: "string" },
+        content: { type: "string" },
+        projectId: { type: "string" },
+        pinned: { type: "boolean" },
+      },
+      required: ["title"],
+    },
+  },
+  {
+    name: "delete_note",
+    description: "Delete a note by id",
+    inputSchema: { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
+  },
+  {
+    name: "list_mindmaps",
+    description: "List mind maps",
+    inputSchema: { type: "object", properties: {} },
+  },
+  {
+    name: "read_mindmap",
+    description: "Read a mind map by id, including its nodes and edges",
+    inputSchema: { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
+  },
+  {
+    name: "create_mindmap",
+    description: "Create a new (empty) mind map",
+    inputSchema: {
+      type: "object",
+      properties: { title: { type: "string" }, projectId: { type: "string" } },
+      required: ["title"],
+    },
+  },
 ] as const;
 
 // ── Tool executor ─────────────────────────────────────────────────────────────
@@ -215,6 +269,30 @@ async function callTool(name: string, input: Record<string, any>): Promise<strin
     case "run_focus_engine":
       if (!process.env.ANTHROPIC_API_KEY) return "ANTHROPIC_API_KEY not set";
       return (await runFocusEngine()).briefingMd;
+    case "list_notes":
+      return JSON.stringify(await getNotes({ search: input.search }));
+    case "read_note": {
+      const n = await getNote(input.id);
+      return n ? JSON.stringify(n) : "not found";
+    }
+    case "write_note": {
+      const { id, title, content, projectId, pinned } = input;
+      if (id) {
+        return JSON.stringify(await updateNote(id, { title, content, projectId, pinned }));
+      }
+      return JSON.stringify(await createNote({ title, content, projectId, pinned }));
+    }
+    case "delete_note":
+      await deleteNote(input.id);
+      return "deleted";
+    case "list_mindmaps":
+      return JSON.stringify(await getMindmaps());
+    case "read_mindmap": {
+      const m = await getMindmap(input.id);
+      return m ? JSON.stringify(m) : "not found";
+    }
+    case "create_mindmap":
+      return JSON.stringify(await createMindmap({ title: input.title, projectId: input.projectId }));
     default:
       throw new Error(`Unknown tool: ${name}`);
   }

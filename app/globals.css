@@ -175,6 +175,114 @@
   }
 }
 
+/* ── Markdown rendering (Notes preview, chat) ────────────────────────────── */
+.markdown-body { word-wrap: break-word; }
+.markdown-body > *:first-child { margin-top: 0; }
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4 {
+  color: var(--text);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  margin: 1.4em 0 0.5em;
+}
+.markdown-body h1 { font-size: 1.5rem; color: var(--cream); }
+.markdown-body h2 { font-size: 1.25rem; }
+.markdown-body h3 { font-size: 1.1rem; }
+.markdown-body h4 { font-size: 1rem; }
+.markdown-body p { margin: 0.7em 0; }
+.markdown-body a { color: var(--ice); text-decoration: underline; text-underline-offset: 2px; }
+.markdown-body a:hover { color: var(--teal); }
+.markdown-body strong { color: var(--text); font-weight: 600; }
+.markdown-body em { color: var(--text); }
+.markdown-body ul,
+.markdown-body ol { margin: 0.7em 0; padding-left: 1.4em; }
+.markdown-body li { margin: 0.3em 0; }
+.markdown-body ul { list-style: disc; }
+.markdown-body ol { list-style: decimal; }
+.markdown-body blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 1em;
+  margin: 0.8em 0;
+  color: var(--text-2);
+}
+.markdown-body code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: var(--glass-strong);
+  border: 1px solid var(--glass-border);
+  border-radius: 6px;
+  padding: 0.12em 0.4em;
+}
+.markdown-body pre {
+  background: var(--surface);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 1em;
+  overflow-x: auto;
+  margin: 0.8em 0;
+}
+.markdown-body pre code {
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: 0.85rem;
+}
+.markdown-body hr { border: none; border-top: 1px solid var(--glass-border); margin: 1.5em 0; }
+.markdown-body table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.8em 0;
+  font-size: 0.9em;
+}
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid var(--glass-border);
+  padding: 0.5em 0.75em;
+  text-align: left;
+}
+.markdown-body th { background: var(--glass-strong); color: var(--text); font-weight: 600; }
+.markdown-body input[type="checkbox"] { margin-right: 0.4em; accent-color: var(--accent); }
+.markdown-body img { max-width: 100%; border-radius: 10px; }
+
+/* ── React Flow dark glass canvas (Mind Maps) ────────────────────────────── */
+.react-flow__attribution { display: none; }
+.react-flow__background { background: transparent; }
+.react-flow__edge-path { stroke: var(--slate); stroke-width: 1.5; }
+.react-flow__edge.selected .react-flow__edge-path,
+.react-flow__edge:hover .react-flow__edge-path { stroke: var(--accent); }
+.react-flow__edge-text { fill: var(--text-2); font-size: 11px; }
+.react-flow__edge-textbg { fill: var(--surface); }
+.react-flow__handle {
+  width: 8px;
+  height: 8px;
+  background: var(--teal);
+  border: 1.5px solid var(--bg-base);
+}
+.react-flow__controls {
+  background: var(--glass);
+  backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+.react-flow__controls-button {
+  background: transparent;
+  border-bottom: 1px solid var(--glass-border);
+  color: var(--text-2);
+  fill: var(--text-2);
+}
+.react-flow__controls-button:hover { background: var(--glass-strong); }
+.react-flow__controls-button svg { fill: var(--text-2); }
+.react-flow__minimap {
+  background: var(--surface);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+}
+
 /* ── Ambient background gradient ─────────────────────────────────────────── */
 .ambient-bg {
   position: fixed;
