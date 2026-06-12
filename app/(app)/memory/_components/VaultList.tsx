@@ -1,0 +1,262 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { GlassCard, GlassButton } from "@/components/glass";
+import { Plus, BookOpen, Cpu, FileText, Lightbulb, Search, Trash2, ChevronRight } from "lucide-react";
+import type { MemoryFile } from "@/db";
+import { MEMORY_KINDS } from "@/lib/memory-constants";
+
+const KIND_ICONS: Record<string, React.ElementType> = {
+  conversation: BookOpen,
+  decision: Cpu,
+  spec: FileText,
+  reference: Lightbulb,
+};
+
+const KIND_COLORS: Record<string, string> = {
+  conversation: "var(--teal)",
+  decision: "var(--accent)",
+  spec: "var(--ice)",
+  reference: "var(--gold)",
+};
+
+interface Props {
+  initialFiles: MemoryFile[];
+}
+
+const spring = { type: "spring", stiffness: 260, damping: 26 } as const;
+
+export function VaultList({ initialFiles }: Props) {
+  const [files, setFiles] = useState(initialFiles);
+  const [search, setSearch] = useState("");
+  const [kindFilter, setKindFilter] = useState<string>("all");
+  const [showForm, setShowForm] = useState(false);
+  const [selected, setSelected] = useState<MemoryFile | null>(null);
+  const [form, setForm] = useState({ path: "", title: "", kind: "conversation", summary: "", contentText: "" });
+  const [pending, startTransition] = useTransition();
+
+  const filtered = files.filter((f) => {
+    if (kindFilter !== "all" && f.kind !== kindFilter) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      return f.title.toLowerCase().includes(q) || (f.summary ?? "").toLowerCase().includes(q);
+    }
+    return true;
+  });
+
+  const save = () => {
+    if (!form.path.trim() || !form.title.trim()) return;
+    startTransition(async () => {
+      const res = await fetch("/api/memory", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (res.ok) {
+        const f: MemoryFile = await res.json();
+        setFiles((prev) => [f, ...prev]);
+        setForm({ path: "", title: "", kind: "conversation", summary: "", contentText: "" });
+        setShowForm(false);
+      }
+    });
+  };
+
+  const del = (id: string) => {
+    startTransition(async () => {
+      await fetch(`/api/memory/${id}`, { method: "DELETE" });
+      setFiles((prev) => prev.filter((f) => f.id !== id));
+      if (selected?.id === id) setSelected(null);
+    });
+  };
+
+  return (
+    <div className="flex gap-4 h-[calc(100vh-12rem)]">
+      {/* Left: list */}
+      <div className="w-72 flex-shrink-0 flex flex-col gap-3">
+        {/* Search + filter */}
+        <div className="glass-card p-3 flex flex-col gap-2">
+          <div className="flex items-center gap-2 border-b border-[var(--glass-border)] pb-2">
+            <Search className="w-3.5 h-3.5 text-[var(--text-3)]" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search…"
+              className="bg-transparent text-sm outline-none flex-1 text-[var(--text)] placeholder:text-[var(--text-3)]"
+            />
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {["all", ...MEMORY_KINDS.map((k) => k.value)].map((k) => (
+              <button
+                key={k}
+                onClick={() => setKindFilter(k)}
+                className={`text-xs px-2 py-0.5 rounded-full transition-colors ${
+                  kindFilter === k
+                    ? "bg-[var(--accent)] text-[var(--navy)]"
+                    : "text-[var(--text-3)] hover:text-[var(--text-2)]"
+                }`}
+              >
+                {k === "all" ? "All" : MEMORY_KINDS.find((m) => m.value === k)?.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <GlassButton variant="primary" size="sm" onClick={() => setShowForm(true)}>
+          <Plus className="w-3.5 h-3.5 mr-1" /> New file
+        </GlassButton>
+
+        <div className="flex-1 overflow-y-auto flex flex-col gap-1.5 pr-1">
+          <AnimatePresence>
+            {filtered.map((f) => {
+              const Icon = KIND_ICONS[f.kind] ?? BookOpen;
+              const color = KIND_COLORS[f.kind] ?? "var(--text-3)";
+              return (
+                <motion.div
+                  key={f.id}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -8 }}
+                  transition={spring}
+                >
+                  <GlassCard
+                    interactive
+                    className={`p-3 cursor-pointer group ${selected?.id === f.id ? "border-[var(--accent)]" : ""}`}
+                    onClick={() => setSelected(f)}
+                  >
+                    <div className="flex items-start gap-2">
+                      <Icon className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color }} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-[var(--text)] truncate">{f.title}</p>
+                        <p className="text-xs text-[var(--text-3)] truncate mt-0.5">{f.path}</p>
+                      </div>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); del(f.id); }}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 className="w-3 h-3 text-[var(--text-3)] hover:text-red-400" />
+                      </button>
+                    </div>
+                  </GlassCard>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+          {filtered.length === 0 && (
+            <p className="text-xs text-[var(--text-3)] text-center py-8">No files found</p>
+          )}
+        </div>
+      </div>
+
+      {/* Right: viewer or form */}
+      <div className="flex-1 overflow-hidden">
+        <AnimatePresence mode="wait">
+          {showForm ? (
+            <motion.div
+              key="form"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              transition={spring}
+              className="glass-card p-5 h-full flex flex-col gap-4"
+            >
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-[var(--text)]">New memory file</h2>
+                <GlassButton variant="ghost" size="sm" onClick={() => setShowForm(false)}>Cancel</GlassButton>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs text-[var(--text-3)]">Path (unique key)</label>
+                  <input
+                    value={form.path}
+                    onChange={(e) => setForm((p) => ({ ...p, path: e.target.value }))}
+                    placeholder="decisions/auth-2026"
+                    className="bg-[var(--surface)] border border-[var(--glass-border)] rounded-lg px-3 py-1.5 text-sm text-[var(--text)] outline-none"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs text-[var(--text-3)]">Kind</label>
+                  <select
+                    value={form.kind}
+                    onChange={(e) => setForm((p) => ({ ...p, kind: e.target.value }))}
+                    className="bg-[var(--surface)] border border-[var(--glass-border)] rounded-lg px-3 py-1.5 text-sm text-[var(--text)] outline-none"
+                  >
+                    {MEMORY_KINDS.map((k) => <option key={k.value} value={k.value}>{k.label}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-[var(--text-3)]">Title</label>
+                <input
+                  value={form.title}
+                  onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
+                  placeholder="File title"
+                  className="bg-[var(--surface)] border border-[var(--glass-border)] rounded-lg px-3 py-1.5 text-sm text-[var(--text)] outline-none"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-[var(--text-3)]">Summary (optional)</label>
+                <input
+                  value={form.summary}
+                  onChange={(e) => setForm((p) => ({ ...p, summary: e.target.value }))}
+                  placeholder="One-line summary"
+                  className="bg-[var(--surface)] border border-[var(--glass-border)] rounded-lg px-3 py-1.5 text-sm text-[var(--text)] outline-none"
+                />
+              </div>
+              <div className="flex flex-col gap-1 flex-1">
+                <label className="text-xs text-[var(--text-3)]">Content (markdown)</label>
+                <textarea
+                  value={form.contentText}
+                  onChange={(e) => setForm((p) => ({ ...p, contentText: e.target.value }))}
+                  placeholder="Write your content here…"
+                  className="flex-1 bg-[var(--surface)] border border-[var(--glass-border)] rounded-lg px-3 py-2 text-sm text-[var(--text)] outline-none resize-none font-mono"
+                />
+              </div>
+              <GlassButton variant="primary" onClick={save} disabled={pending || !form.path || !form.title}>
+                Save file
+              </GlassButton>
+            </motion.div>
+          ) : selected ? (
+            <motion.div
+              key={selected.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              transition={spring}
+              className="glass-card p-5 h-full flex flex-col gap-3 overflow-y-auto"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs text-[var(--text-3)] font-mono">{selected.path}</p>
+                  <h2 className="text-lg font-semibold text-[var(--text)] mt-1">{selected.title}</h2>
+                  {selected.summary && <p className="text-sm text-[var(--text-2)] mt-1">{selected.summary}</p>}
+                </div>
+                <span
+                  className="text-xs px-2 py-0.5 rounded-full flex-shrink-0"
+                  style={{ background: "var(--glass-strong)", color: KIND_COLORS[selected.kind] }}
+                >
+                  {selected.kind}
+                </span>
+              </div>
+              <div className="border-t border-[var(--glass-border)] pt-3 flex-1">
+                <pre className="text-sm text-[var(--text-2)] whitespace-pre-wrap font-mono leading-relaxed">
+                  {selected.contentText || <span className="text-[var(--text-3)] italic">No content</span>}
+                </pre>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="glass-card h-full flex flex-col items-center justify-center gap-3"
+            >
+              <ChevronRight className="w-6 h-6 text-[var(--text-3)]" />
+              <p className="text-sm text-[var(--text-3)]">Select a file to view it</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
