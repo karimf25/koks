@@ -1,11 +1,13 @@
 import { Metadata } from "next";
 import { getProjectsWithTaskCount } from "@/lib/projects";
+import { serializeProject } from "@/lib/serialize";
 import { ProjectGrid } from "./_components/ProjectGrid";
 
 export const metadata: Metadata = { title: "Projects — LifeOS" };
 
 export default async function ProjectsPage() {
-  const projects = await getProjectsWithTaskCount();
+  const rawProjects = await getProjectsWithTaskCount();
+  const projects = rawProjects.map((p) => ({ ...serializeProject(p), taskCount: p.taskCount }));
 
   return (
     <div className="space-y-6">

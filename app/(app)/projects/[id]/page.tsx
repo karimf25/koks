@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getProject, getProjects, AREA_COLORS } from "@/lib/projects";
 import { getTasks } from "@/lib/tasks";
+import { serializeTask, serializeProject } from "@/lib/serialize";
 import { TaskList } from "../../tasks/_components/TaskList";
 import { GlassPanel } from "@/components/glass";
 
@@ -21,11 +22,13 @@ export default async function ProjectDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [project, tasks, allProjects] = await Promise.all([
+  const [project, rawTasks, rawAllProjects] = await Promise.all([
     getProject(id),
     getTasks({ projectId: id }),
     getProjects(),
   ]);
+  const tasks = rawTasks.map(serializeTask);
+  const allProjects = rawAllProjects.map(serializeProject);
 
   if (!project) notFound();
 

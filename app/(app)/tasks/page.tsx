@@ -1,12 +1,15 @@
 import { Metadata } from "next";
 import { getTasks } from "@/lib/tasks";
 import { getProjects } from "@/lib/projects";
+import { serializeTask, serializeProject } from "@/lib/serialize";
 import { TaskList } from "./_components/TaskList";
 
 export const metadata: Metadata = { title: "Tasks — LifeOS" };
 
 export default async function TasksPage() {
-  const [tasks, projects] = await Promise.all([getTasks(), getProjects()]);
+  const [rawTasks, rawProjects] = await Promise.all([getTasks(), getProjects()]);
+  const tasks = rawTasks.map(serializeTask);
+  const projects = rawProjects.map(serializeProject);
 
   return (
     <div className="space-y-6">

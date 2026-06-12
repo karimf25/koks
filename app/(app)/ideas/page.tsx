@@ -1,11 +1,12 @@
 import { Metadata } from "next";
 import { getIdeas } from "@/lib/ideas";
+import { serializeIdea } from "@/lib/serialize";
 import { IdeasBoard } from "./_components/IdeasBoard";
 
 export const metadata: Metadata = { title: "Ideas — LifeOS" };
 
 export default async function IdeasPage() {
-  const ideas = await getIdeas();
+  const ideas = (await getIdeas()).map(serializeIdea);
 
   return (
     <div className="space-y-6">

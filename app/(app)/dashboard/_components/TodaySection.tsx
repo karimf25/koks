@@ -4,7 +4,10 @@ import { GlassPanel, GlassButton, PriorityDot } from "@/components/glass";
 import { CheckSquare, Calendar, MapPin } from "lucide-react";
 import { useState, useTransition } from "react";
 import { format } from "date-fns";
-import type { Task, Event } from "@/db";
+import type { SerializedTask, SerializedEvent } from "@/lib/serialize";
+
+type Task = SerializedTask;
+type Event = SerializedEvent;
 
 interface Props {
   tasks: Task[];

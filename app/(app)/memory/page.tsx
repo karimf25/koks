@@ -1,11 +1,12 @@
 import { Metadata } from "next";
 import { getMemoryFiles } from "@/lib/memory";
+import { serializeMemoryFile } from "@/lib/serialize";
 import { VaultList } from "./_components/VaultList";
 
 export const metadata: Metadata = { title: "Memory Vault — LifeOS" };
 
 export default async function MemoryPage() {
-  const files = await getMemoryFiles();
+  const files = (await getMemoryFiles()).map(serializeMemoryFile);
 
   return (
     <div className="space-y-6">

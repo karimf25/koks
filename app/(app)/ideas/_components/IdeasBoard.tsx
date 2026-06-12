@@ -5,7 +5,9 @@ import { motion, AnimatePresence } from "motion/react";
 import { GlassCard, GlassButton } from "@/components/glass";
 import { Plus, Lightbulb, TrendingUp, Archive, X, Bookmark } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import type { Idea } from "@/db";
+import type { SerializedIdea } from "@/lib/serialize";
+
+type Idea = SerializedIdea;
 
 interface Props {
   initialIdeas: Idea[];

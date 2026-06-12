@@ -1,0 +1,83 @@
+import type { Task, Project, Event, FocusRun, Idea, MemoryFile } from "@/db";
+
+export type SerializedTask = Omit<Task, "dueDate" | "createdAt" | "updatedAt" | "completedAt"> & {
+  dueDate: string | null;
+  createdAt: string;
+  updatedAt: string;
+  completedAt: string | null;
+};
+
+export type SerializedProject = Omit<Project, "lastTouchedAt" | "createdAt" | "updatedAt"> & {
+  lastTouchedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type SerializedEvent = Omit<Event, "start" | "end" | "createdAt" | "updatedAt"> & {
+  start: string;
+  end: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type SerializedFocusRun = Omit<FocusRun, "runAt"> & { runAt: string };
+
+function iso(d: Date | string | null | undefined): string | null {
+  if (!d) return null;
+  return d instanceof Date ? d.toISOString() : d;
+}
+
+function isoReq(d: Date | string): string {
+  return d instanceof Date ? d.toISOString() : d;
+}
+
+export function serializeTask(t: Task): SerializedTask {
+  return {
+    ...t,
+    dueDate: iso(t.dueDate),
+    createdAt: isoReq(t.createdAt),
+    updatedAt: isoReq(t.updatedAt),
+    completedAt: iso(t.completedAt),
+  };
+}
+
+export function serializeProject(p: Project): SerializedProject {
+  return {
+    ...p,
+    lastTouchedAt: iso(p.lastTouchedAt),
+    createdAt: isoReq(p.createdAt),
+    updatedAt: isoReq(p.updatedAt),
+  };
+}
+
+export function serializeEvent(e: Event): SerializedEvent {
+  return {
+    ...e,
+    start: isoReq(e.start),
+    end: isoReq(e.end),
+    createdAt: isoReq(e.createdAt),
+    updatedAt: isoReq(e.updatedAt),
+  };
+}
+
+export function serializeFocusRun(f: FocusRun): SerializedFocusRun {
+  return { ...f, runAt: isoReq(f.runAt) };
+}
+
+export type SerializedIdea = Omit<Idea, "createdAt" | "updatedAt"> & {
+  createdAt: string;
+  updatedAt: string;
+};
+
+export function serializeIdea(i: Idea): SerializedIdea {
+  return { ...i, createdAt: isoReq(i.createdAt), updatedAt: isoReq(i.updatedAt) };
+}
+
+export type SerializedMemoryFile = Omit<MemoryFile, "createdAt" | "updatedAt"> & {
+  createdAt: string;
+  updatedAt: string;
+};
+
+export function serializeMemoryFile(m: MemoryFile): SerializedMemoryFile {
+  return { ...m, createdAt: isoReq(m.createdAt), updatedAt: isoReq(m.updatedAt) };
+}

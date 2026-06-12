@@ -6,17 +6,20 @@ import { getTaskStats, getTodayTasks } from "@/lib/tasks";
 import { getProjects } from "@/lib/projects";
 import { getIdeasInboxCount } from "@/lib/ideas";
 import { getTodayEvents } from "@/lib/events";
+import { serializeTask, serializeEvent } from "@/lib/serialize";
 
 export const metadata: Metadata = { title: "Dashboard — LifeOS" };
 
 export default async function DashboardPage() {
-  const [stats, todayTasks, activeProjects, inboxCount, todayEvents] = await Promise.all([
+  const [stats, rawTodayTasks, activeProjects, inboxCount, rawTodayEvents] = await Promise.all([
     getTaskStats(),
     getTodayTasks(),
     getProjects({ status: "active" }),
     getIdeasInboxCount(),
     getTodayEvents(),
   ]);
+  const todayTasks = rawTodayTasks.map(serializeTask);
+  const todayEvents = rawTodayEvents.map(serializeEvent);
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";

@@ -4,7 +4,8 @@ import { useState, useTransition } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { GlassCard, GlassButton } from "@/components/glass";
 import { Plus, BookOpen, Cpu, FileText, Lightbulb, Search, Trash2, ChevronRight } from "lucide-react";
-import type { MemoryFile } from "@/db";
+import type { SerializedMemoryFile } from "@/lib/serialize";
+type MemoryFile = SerializedMemoryFile;
 import { MEMORY_KINDS } from "@/lib/memory-constants";
 
 const KIND_ICONS: Record<string, React.ElementType> = {

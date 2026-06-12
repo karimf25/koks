@@ -3,9 +3,12 @@
 import { useState, useTransition, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { GlassCard, GlassButton, PriorityDot } from "@/components/glass";
-import { Plus, Check, Trash2, ChevronDown } from "lucide-react";
+import { Plus, Check, Trash2 } from "lucide-react";
 import { format, isPast, isToday } from "date-fns";
-import type { Task, Project } from "@/db";
+import type { SerializedTask, SerializedProject } from "@/lib/serialize";
+
+type Task = SerializedTask;
+type Project = SerializedProject;
 
 interface Props {
   initialTasks: Task[];
@@ -33,6 +36,7 @@ export function TaskList({ initialTasks, projects }: Props) {
 
   const addTask = async () => {
     if (!newTitle.trim()) return;
+    const now = new Date().toISOString();
     const optimistic: Task = {
       id: crypto.randomUUID(),
       title: newTitle.trim(),
@@ -49,8 +53,8 @@ export function TaskList({ initialTasks, projects }: Props) {
       msTodoId: null,
       msListId: null,
       source: "app",
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: now,
+      updatedAt: now,
       completedAt: null,
     };
     setTasks((prev) => [optimistic, ...prev]);
@@ -74,7 +78,7 @@ export function TaskList({ initialTasks, projects }: Props) {
       prev.map((t) => {
         if (t.id !== id) return t;
         const next = t.status === "done" ? "todo" : "done";
-        return { ...t, status: next as Task["status"], completedAt: next === "done" ? new Date() : null };
+        return { ...t, status: next as Task["status"], completedAt: next === "done" ? new Date().toISOString() : null };
       })
     );
     const task = tasks.find((t) => t.id === id)!;

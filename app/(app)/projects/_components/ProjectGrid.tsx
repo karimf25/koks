@@ -6,7 +6,9 @@ import { GlassCard, GlassButton } from "@/components/glass";
 import { Plus, FolderOpen, CheckSquare } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { AREAS, AREA_COLORS } from "@/lib/project-constants";
-import type { Project } from "@/db";
+import type { SerializedProject } from "@/lib/serialize";
+
+type Project = SerializedProject;
 
 interface ProjectWithCount extends Project {
   taskCount: number;
