@@ -6,7 +6,8 @@ if (!password) {
   process.exit(1);
 }
 
-const hash = await bcrypt.hash(password, 12);
-console.log("\nPassword hash (paste into APP_PASSWORD_HASH):\n");
-console.log(hash);
-console.log();
+bcrypt.hash(password, 12).then((hash) => {
+  console.log("\nPassword hash (paste into APP_PASSWORD_HASH):\n");
+  console.log(hash);
+  console.log();
+});

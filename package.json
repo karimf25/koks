@@ -21,6 +21,7 @@
     "chrono-node": "^2.9.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "date-fns": "^4.4.0",
     "drizzle-kit": "^0.31.10",
     "drizzle-orm": "^0.45.2",
     "iron-session": "^8.0.4",

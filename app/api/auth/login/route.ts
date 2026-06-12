@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { createSession } from "@/lib/auth";
 import { z } from "zod";
@@ -35,3 +35,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+
