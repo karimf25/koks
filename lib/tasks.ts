@@ -1,5 +1,5 @@
 import { db, tasks, type Task } from "@/db";
-import { eq, and, gte, lte, isNull, or, desc, asc } from "drizzle-orm";
+import { eq, and, gte, lte, isNull, or, ne, desc, asc } from "drizzle-orm";
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, addDays } from "date-fns";
 
 export type CreateTaskInput = {
@@ -7,16 +7,22 @@ export type CreateTaskInput = {
   description?: string;
   projectId?: string;
   priority?: number;
-  dueDate?: string;
+  status?: string;
+  dueDate?: string | null;
   scheduledDate?: string;
   recurrence?: string;
   source?: string;
+  msTodoId?: string;
+  msListId?: string;
+  completedAt?: string | Date | null;
 };
 
 export type UpdateTaskInput = Partial<CreateTaskInput> & {
   status?: Task["status"];
   isFocus?: boolean;
-  completedAt?: string | null;
+  completedAt?: string | Date | null;
+  msTodoId?: string | null;
+  msListId?: string | null;
 };
 
 export async function getTasks(filters?: {
@@ -77,10 +83,14 @@ export async function createTask(input: CreateTaskInput): Promise<Task> {
       description: input.description,
       projectId: input.projectId as any,
       priority: input.priority ?? 2,
+      status: input.status ?? "todo",
       dueDate: input.dueDate ? new Date(input.dueDate) : undefined,
       scheduledDate: input.scheduledDate,
       recurrence: input.recurrence,
       source: input.source ?? "app",
+      msTodoId: input.msTodoId,
+      msListId: input.msListId,
+      completedAt: input.completedAt ? new Date(input.completedAt) : undefined,
     })
     .returning();
   return task;
@@ -100,6 +110,8 @@ export async function updateTask(id: string, input: UpdateTaskInput): Promise<Ta
   if (input.dueDate !== undefined) updates.dueDate = input.dueDate ? new Date(input.dueDate) : null as any;
   if (input.scheduledDate !== undefined) updates.scheduledDate = input.scheduledDate;
   if (input.recurrence !== undefined) updates.recurrence = input.recurrence;
+  if (input.msTodoId !== undefined) updates.msTodoId = input.msTodoId as any;
+  if (input.msListId !== undefined) updates.msListId = input.msListId as any;
   if (input.completedAt !== undefined) {
     updates.completedAt = input.completedAt ? new Date(input.completedAt) : null as any;
   }
@@ -113,6 +125,32 @@ export async function updateTask(id: string, input: UpdateTaskInput): Promise<Ta
 
 export async function deleteTask(id: string) {
   await db.delete(tasks).where(eq(tasks.id, id));
+}
+
+// ── Microsoft To Do sync helpers ────────────────────────────────────────────────
+
+/** All LifeOS tasks linked to a given Microsoft To Do list. */
+export async function getTasksByMsListId(listId: string): Promise<Task[]> {
+  return db.select().from(tasks).where(eq(tasks.msListId, listId));
+}
+
+/**
+ * LifeOS-native tasks eligible to be pushed to Microsoft for the first time:
+ * not already linked (no msTodoId), not originally from Microsoft, not cancelled,
+ * and not attached to a project (loose / inbox-style tasks).
+ */
+export async function getPushableTasks(): Promise<Task[]> {
+  return db
+    .select()
+    .from(tasks)
+    .where(
+      and(
+        isNull(tasks.msTodoId),
+        isNull(tasks.projectId),
+        ne(tasks.source, "microsoft"),
+        ne(tasks.status, "cancelled")
+      )
+    );
 }
 
 export async function getTaskStats() {

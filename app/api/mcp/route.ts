@@ -13,6 +13,7 @@ import { getMemoryFiles, getMemoryFileByPath, createMemoryFile, updateMemoryFile
 import { getNotes, getNote, createNote, updateNote, deleteNote } from "@/lib/notes";
 import { getMindmaps, getMindmap, createMindmap } from "@/lib/mindmaps";
 import { getLatestFocusRun, runFocusEngine } from "@/lib/focus";
+import { syncMicrosoftTodo } from "@/lib/microsoft/sync";
 
 // ── Tool definitions ─────────────────────────────────────────────────────────
 
@@ -217,6 +218,11 @@ const TOOLS = [
       required: ["title"],
     },
   },
+  {
+    name: "sync_microsoft_todo",
+    description: "Run a two-way sync between LifeOS tasks and the connected Microsoft To Do list",
+    inputSchema: { type: "object", properties: {} },
+  },
 ] as const;
 
 // ── Tool executor ─────────────────────────────────────────────────────────────
@@ -293,6 +299,8 @@ async function callTool(name: string, input: Record<string, any>): Promise<strin
     }
     case "create_mindmap":
       return JSON.stringify(await createMindmap({ title: input.title, projectId: input.projectId }));
+    case "sync_microsoft_todo":
+      return JSON.stringify(await syncMicrosoftTodo());
     default:
       throw new Error(`Unknown tool: ${name}`);
   }

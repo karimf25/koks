@@ -3,6 +3,7 @@
 import { GlassPanel, GlassButton } from "@/components/glass";
 import { Settings, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { MicrosoftIntegration } from "./_components/MicrosoftIntegration";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -19,6 +20,8 @@ export default function SettingsPage() {
         <h1 className="text-2xl font-semibold tracking-tight text-[var(--cream)]">Settings</h1>
         <p className="text-sm text-[var(--text-3)] mt-1">Configure your LifeOS</p>
       </div>
+
+      <MicrosoftIntegration />
 
       <GlassPanel className="max-w-lg">
         <div className="flex items-center gap-2 mb-6">

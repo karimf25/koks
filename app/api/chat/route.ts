@@ -7,6 +7,7 @@ import { getEvents } from "@/lib/events";
 import { getMemoryFiles, createMemoryFile, updateMemoryFile } from "@/lib/memory";
 import { getNotes, getNote, createNote, updateNote } from "@/lib/notes";
 import { getLatestFocusRun } from "@/lib/focus";
+import { syncMicrosoftTodo } from "@/lib/microsoft/sync";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -129,6 +130,11 @@ const tools: Anthropic.Tool[] = [
       required: ["title"],
     },
   },
+  {
+    name: "sync_microsoft_todo",
+    description: "Run a two-way sync between LifeOS tasks and the connected Microsoft To Do list",
+    input_schema: { type: "object", properties: {} },
+  },
 ];
 
 async function executeTool(name: string, input: Record<string, any>): Promise<string> {
@@ -182,6 +188,8 @@ async function executeTool(name: string, input: Record<string, any>): Promise<st
           await createNote({ title: input.title, content: input.content, projectId: input.projectId })
         );
       }
+      case "sync_microsoft_todo":
+        return JSON.stringify(await syncMicrosoftTodo());
       default:
         return JSON.stringify({ error: "Unknown tool" });
     }

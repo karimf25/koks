@@ -6,6 +6,7 @@ const PUBLIC_PATHS = [
   "/login",
   "/api/auth/login",
   "/api/integrations/microsoft/callback",
+  "/api/cron", // secured by CRON_SECRET bearer token, not session
 ];
 
 const MCP_PATH = "/api/mcp";
