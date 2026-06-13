@@ -38,6 +38,7 @@ export const tasks = pgTable("tasks", {
   msTodoId: text("ms_todo_id"),
   msListId: text("ms_list_id"),
   source: text("source").notNull().default("app"), // app | claude | microsoft | automation
+  position: integer("position").notNull().default(0), // manual ordering (drag-drop); backfilled by createdAt
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   completedAt: timestamp("completed_at", { withTimezone: true }),
@@ -141,6 +142,17 @@ export const agentRuns = pgTable("agent_runs", {
   finishedAt: timestamp("finished_at", { withTimezone: true }),
 });
 
+export const attachments = pgTable("attachments", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  ownerType: text("owner_type").notNull(), // task | project
+  ownerId: uuid("owner_id").notNull(),
+  name: text("name").notNull(),
+  path: text("path").notNull(), // object path within the storage bucket
+  mimeType: text("mime_type"),
+  sizeBytes: integer("size_bytes"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 export type Project = typeof projects.$inferSelect;
 export type Task = typeof tasks.$inferSelect;
 export type Idea = typeof ideas.$inferSelect;
@@ -151,3 +163,4 @@ export type MemoryFile = typeof memoryFiles.$inferSelect;
 export type FocusRun = typeof focusRuns.$inferSelect;
 export type Automation = typeof automations.$inferSelect;
 export type AgentRun = typeof agentRuns.$inferSelect;
+export type Attachment = typeof attachments.$inferSelect;

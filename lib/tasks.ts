@@ -1,5 +1,5 @@
 import { db, tasks, type Task } from "@/db";
-import { eq, and, gte, lte, isNull, or, ne, desc, asc } from "drizzle-orm";
+import { eq, and, gte, lte, isNull, or, ne, desc, asc, sql } from "drizzle-orm";
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, addDays } from "date-fns";
 
 export type CreateTaskInput = {
@@ -76,6 +76,10 @@ export async function getTask(id: string) {
 }
 
 export async function createTask(input: CreateTaskInput): Promise<Task> {
+  // New tasks land at the end of the manual order.
+  const [{ next }] = await db
+    .select({ next: sql<number>`coalesce(max(${tasks.position}), 0) + 1` })
+    .from(tasks);
   const [task] = await db
     .insert(tasks)
     .values({
@@ -90,10 +94,23 @@ export async function createTask(input: CreateTaskInput): Promise<Task> {
       source: input.source ?? "app",
       msTodoId: input.msTodoId,
       msListId: input.msListId,
+      position: Number(next) || 0,
       completedAt: input.completedAt ? new Date(input.completedAt) : undefined,
     })
     .returning();
   return task;
+}
+
+/**
+ * Persist a manual ordering. `orderedIds` is the full list of task ids in the
+ * desired order; each task's `position` is set to its index. Used by drag-drop (M1.8).
+ */
+export async function reorderTasks(orderedIds: string[]): Promise<void> {
+  await Promise.all(
+    orderedIds.map((id, i) =>
+      db.update(tasks).set({ position: i, updatedAt: new Date() }).where(eq(tasks.id, id))
+    )
+  );
 }
 
 export async function updateTask(id: string, input: UpdateTaskInput): Promise<Task | null> {

@@ -3,10 +3,9 @@
 import { useState, useTransition, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { GlassCard, GlassButton } from "@/components/glass";
-import { Plus, Search, Trash2, Pin, FileText, Eye, Pencil, Check, Loader2, ChevronLeft } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { Plus, Search, Trash2, Pin, FileText, Check, Loader2, ChevronLeft } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { MarkdownEditor } from "@/components/MarkdownEditor";
 import { AREA_COLORS } from "@/lib/project-constants";
 import type { SerializedNote, SerializedProject } from "@/lib/serialize";
 
@@ -218,7 +217,6 @@ function NoteEditor({
   const [title, setTitle] = useState(note.title);
   const [content, setContent] = useState(note.content);
   const [projectId, setProjectId] = useState<string | null>(note.projectId);
-  const [mode, setMode] = useState<"edit" | "preview">("edit");
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -291,81 +289,40 @@ function NoteEditor({
         </button>
       </div>
 
-      {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-[var(--glass-border)] pb-3">
-        <div className="flex rounded-xl bg-[var(--glass)] border border-[var(--glass-border)] p-0.5">
-          <ToolbarToggle active={mode === "edit"} onClick={() => setMode("edit")} icon={Pencil} label="Edit" />
-          <ToolbarToggle active={mode === "preview"} onClick={() => setMode("preview")} icon={Eye} label="Preview" />
-        </div>
-        <div className="ml-auto flex items-center gap-2 min-w-0">
-          <span className="text-xs text-[var(--text-3)] flex-shrink-0">Project</span>
-          <select
-            value={projectId ?? ""}
-            onChange={(e) => {
-              const v = e.target.value || null;
-              setProjectId(v);
-              persist({ projectId: v });
-            }}
-            className="min-w-0 max-w-[160px] bg-[var(--surface)] border border-[var(--glass-border)] rounded-lg px-2 py-1 text-xs text-[var(--text)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--ice)]"
-          >
-            <option value="">None</option>
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* Body */}
-      <div className="flex-1 overflow-hidden">
-        {mode === "edit" ? (
-          <textarea
-            value={content}
-            onChange={(e) => {
-              setContent(e.target.value);
-              scheduleSave({ title, content: e.target.value });
-            }}
-            onBlur={() => {
-              if (timer.current) clearTimeout(timer.current);
-              persist({ title, content });
-            }}
-            placeholder="Start writing in Markdown…"
-            className="w-full h-full bg-[var(--surface)] border border-[var(--glass-border)] rounded-xl px-4 py-3 text-sm text-[var(--text)] outline-none resize-none font-mono leading-relaxed focus-visible:ring-2 focus-visible:ring-[var(--ice)]"
-          />
-        ) : (
-          <div className="markdown-body h-full overflow-y-auto px-1 text-sm text-[var(--text-2)] leading-relaxed">
-            {content.trim() ? (
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
-            ) : (
-              <p className="text-[var(--text-3)] italic">Nothing to preview yet.</p>
-            )}
-          </div>
-        )}
-      </div>
+      {/* Toolbar + body (shared MarkdownEditor) */}
+      <MarkdownEditor
+        className="flex-1"
+        bodyClassName="flex-1"
+        value={content}
+        onChange={(v) => {
+          setContent(v);
+          scheduleSave({ title, content: v });
+        }}
+        onBlur={() => {
+          if (timer.current) clearTimeout(timer.current);
+          persist({ title, content });
+        }}
+        toolbarRight={
+          <>
+            <span className="text-xs text-[var(--text-3)] flex-shrink-0">Project</span>
+            <select
+              value={projectId ?? ""}
+              onChange={(e) => {
+                const v = e.target.value || null;
+                setProjectId(v);
+                persist({ projectId: v });
+              }}
+              className="min-w-0 max-w-[160px] bg-[var(--surface)] border border-[var(--glass-border)] rounded-lg px-2 py-1 text-xs text-[var(--text)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--ice)]"
+            >
+              <option value="">None</option>
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </>
+        }
+      />
     </motion.div>
-  );
-}
-
-function ToolbarToggle({
-  active,
-  onClick,
-  icon: Icon,
-  label,
-}: {
-  active: boolean;
-  onClick: () => void;
-  icon: React.ElementType;
-  label: string;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg transition-colors ${
-        active ? "bg-[var(--accent)] text-white" : "text-[var(--text-3)] hover:text-[var(--text-2)]"
-      }`}
-    >
-      <Icon className="w-3 h-3" /> {label}
-    </button>
   );
 }
 

@@ -53,6 +53,7 @@ export function TaskList({ initialTasks, projects }: Props) {
       msTodoId: null,
       msListId: null,
       source: "app",
+      position: 0,
       createdAt: now,
       updatedAt: now,
       completedAt: null,
