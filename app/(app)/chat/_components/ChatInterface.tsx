@@ -27,11 +27,15 @@ export function ChatInterface({ hasApiKey }: { hasApiKey: boolean }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Scroll the messages container only — NOT the whole document. scrollIntoView
+  // would scroll the page on mobile, sliding the header/title out of view.
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messages.length === 0) return;
+    const el = listRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   }, [messages]);
 
   const send = async (text?: string) => {
@@ -138,9 +142,9 @@ export function ChatInterface({ hasApiKey }: { hasApiKey: boolean }) {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-12rem)]">
+    <div className="flex flex-col h-[calc(100dvh-20rem)] lg:h-[calc(100vh-12rem)]">
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto flex flex-col gap-4 pb-4">
+      <div ref={listRef} className="flex-1 overflow-y-auto flex flex-col gap-4 pb-4">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center flex-1 gap-6 py-12">
             <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-[var(--glass-strong)] border border-[var(--glass-border)]">
@@ -231,7 +235,6 @@ export function ChatInterface({ hasApiKey }: { hasApiKey: boolean }) {
           </motion.div>
         )}
 
-        <div ref={bottomRef} />
       </div>
 
       {/* Input */}

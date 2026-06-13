@@ -3,7 +3,7 @@
 import { useState, useTransition, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { GlassCard, GlassButton } from "@/components/glass";
-import { Plus, Search, Trash2, Pin, FileText, Eye, Pencil, Check, Loader2 } from "lucide-react";
+import { Plus, Search, Trash2, Pin, FileText, Eye, Pencil, Check, Loader2, ChevronLeft } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { formatDistanceToNow } from "date-fns";
@@ -23,7 +23,9 @@ type SaveState = "idle" | "saving" | "saved";
 
 export function NotesView({ initialNotes, projects }: Props) {
   const [notes, setNotes] = useState<Note[]>(initialNotes);
-  const [selectedId, setSelectedId] = useState<string | null>(initialNotes[0]?.id ?? null);
+  // Start on the list (null) so mobile shows the list first; on desktop both
+  // panels are visible side by side regardless.
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [pending, startTransition] = useTransition();
 
@@ -79,9 +81,13 @@ export function NotesView({ initialNotes, projects }: Props) {
   });
 
   return (
-    <div className="flex gap-4 h-[calc(100vh-13rem)]">
-      {/* Left: list */}
-      <div className="w-72 flex-shrink-0 flex flex-col gap-3">
+    <div className="flex flex-col lg:flex-row gap-4 lg:h-[calc(100vh-13rem)]">
+      {/* Left: list — full width on mobile, hidden once a note is open */}
+      <div
+        className={`w-full lg:w-72 flex-shrink-0 flex-col gap-3 ${
+          selected ? "hidden lg:flex" : "flex"
+        }`}
+      >
         <div className="glass-card p-3 flex items-center gap-2">
           <Search className="w-3.5 h-3.5 text-[var(--text-3)]" />
           <input
@@ -163,8 +169,12 @@ export function NotesView({ initialNotes, projects }: Props) {
         </div>
       </div>
 
-      {/* Right: editor */}
-      <div className="flex-1 overflow-hidden">
+      {/* Right: editor — full height on mobile, replaces the list when open */}
+      <div
+        className={`lg:flex-1 lg:overflow-hidden h-[calc(100dvh-13rem)] lg:h-full ${
+          selected ? "block" : "hidden lg:block"
+        }`}
+      >
         <AnimatePresence mode="wait">
           {selected ? (
             <NoteEditor
@@ -173,6 +183,7 @@ export function NotesView({ initialNotes, projects }: Props) {
               projects={projects}
               onPatchLocal={patchLocal}
               onTogglePin={() => togglePin(selected)}
+              onBack={() => setSelectedId(null)}
             />
           ) : (
             <motion.div
@@ -196,11 +207,13 @@ function NoteEditor({
   projects,
   onPatchLocal,
   onTogglePin,
+  onBack,
 }: {
   note: Note;
   projects: Project[];
   onPatchLocal: (id: string, patch: Partial<Note>) => void;
   onTogglePin: () => void;
+  onBack: () => void;
 }) {
   const [title, setTitle] = useState(note.title);
   const [content, setContent] = useState(note.content);
@@ -250,6 +263,13 @@ function NoteEditor({
     >
       {/* Header row */}
       <div className="flex items-center gap-3">
+        <button
+          onClick={onBack}
+          className="lg:hidden p-1.5 -ml-1.5 rounded-lg text-[var(--text-3)] hover:text-[var(--text)] hover:bg-[var(--glass-strong)] transition-colors flex-shrink-0"
+          aria-label="Back to notes"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
         <input
           value={title}
           onChange={(e) => {
@@ -272,13 +292,13 @@ function NoteEditor({
       </div>
 
       {/* Toolbar */}
-      <div className="flex items-center gap-2 border-b border-[var(--glass-border)] pb-3">
+      <div className="flex flex-wrap items-center gap-2 border-b border-[var(--glass-border)] pb-3">
         <div className="flex rounded-xl bg-[var(--glass)] border border-[var(--glass-border)] p-0.5">
           <ToolbarToggle active={mode === "edit"} onClick={() => setMode("edit")} icon={Pencil} label="Edit" />
           <ToolbarToggle active={mode === "preview"} onClick={() => setMode("preview")} icon={Eye} label="Preview" />
         </div>
-        <div className="ml-auto flex items-center gap-2">
-          <span className="text-xs text-[var(--text-3)]">Project</span>
+        <div className="ml-auto flex items-center gap-2 min-w-0">
+          <span className="text-xs text-[var(--text-3)] flex-shrink-0">Project</span>
           <select
             value={projectId ?? ""}
             onChange={(e) => {
@@ -286,7 +306,7 @@ function NoteEditor({
               setProjectId(v);
               persist({ projectId: v });
             }}
-            className="bg-[var(--surface)] border border-[var(--glass-border)] rounded-lg px-2 py-1 text-xs text-[var(--text)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--ice)]"
+            className="min-w-0 max-w-[160px] bg-[var(--surface)] border border-[var(--glass-border)] rounded-lg px-2 py-1 text-xs text-[var(--text)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--ice)]"
           >
             <option value="">None</option>
             {projects.map((p) => (

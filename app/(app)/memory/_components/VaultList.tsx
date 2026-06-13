@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { GlassCard, GlassButton } from "@/components/glass";
-import { Plus, BookOpen, Cpu, FileText, Lightbulb, Search, Trash2, ChevronRight } from "lucide-react";
+import { Plus, BookOpen, Cpu, FileText, Lightbulb, Search, Trash2, ChevronRight, ChevronLeft } from "lucide-react";
 import type { SerializedMemoryFile } from "@/lib/serialize";
 type MemoryFile = SerializedMemoryFile;
 import { MEMORY_KINDS } from "@/lib/memory-constants";
@@ -71,10 +71,17 @@ export function VaultList({ initialFiles }: Props) {
     });
   };
 
+  // On mobile, the right pane (viewer/form) replaces the list when active.
+  const detailActive = showForm || !!selected;
+
   return (
-    <div className="flex gap-4 h-[calc(100vh-12rem)]">
-      {/* Left: list */}
-      <div className="w-72 flex-shrink-0 flex flex-col gap-3">
+    <div className="flex flex-col lg:flex-row gap-4 lg:h-[calc(100vh-12rem)]">
+      {/* Left: list — full width on mobile, hidden when a file/form is open */}
+      <div
+        className={`w-full lg:w-72 flex-shrink-0 flex-col gap-3 ${
+          detailActive ? "hidden lg:flex" : "flex"
+        }`}
+      >
         {/* Search + filter */}
         <div className="glass-card p-3 flex flex-col gap-2">
           <div className="flex items-center gap-2 border-b border-[var(--glass-border)] pb-2">
@@ -149,8 +156,12 @@ export function VaultList({ initialFiles }: Props) {
         </div>
       </div>
 
-      {/* Right: viewer or form */}
-      <div className="flex-1 overflow-hidden">
+      {/* Right: viewer or form — full height on mobile, replaces the list */}
+      <div
+        className={`lg:flex-1 lg:overflow-hidden h-[calc(100dvh-12rem)] lg:h-full ${
+          detailActive ? "block" : "hidden lg:block"
+        }`}
+      >
         <AnimatePresence mode="wait">
           {showForm ? (
             <motion.div
@@ -226,6 +237,13 @@ export function VaultList({ initialFiles }: Props) {
               transition={spring}
               className="glass-card p-5 h-full flex flex-col gap-3 overflow-y-auto"
             >
+              <button
+                onClick={() => setSelected(null)}
+                className="lg:hidden flex items-center gap-1 -ml-1 text-xs text-[var(--text-3)] hover:text-[var(--text)] transition-colors w-fit"
+                aria-label="Back to files"
+              >
+                <ChevronLeft className="w-4 h-4" /> Files
+              </button>
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-xs text-[var(--text-3)] font-mono">{selected.path}</p>

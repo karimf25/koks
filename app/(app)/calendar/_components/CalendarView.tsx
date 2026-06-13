@@ -297,7 +297,7 @@ export function CalendarView({
           <h1 className="text-2xl font-semibold tracking-tight text-[var(--cream)]">Calendar</h1>
           <p className="text-sm text-[var(--text-3)] mt-1">Your schedule at a glance</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <GlassButton variant="ghost" size="sm" onClick={() => goMonth(-1)} aria-label="Previous month">
             <ChevronLeft className="w-4 h-4" />
           </GlassButton>
@@ -307,11 +307,11 @@ export function CalendarView({
           <GlassButton variant="ghost" size="sm" onClick={() => goMonth(1)} aria-label="Next month">
             <ChevronRight className="w-4 h-4" />
           </GlassButton>
-          <span className="text-sm font-medium text-[var(--text)] min-w-32 text-center">
+          <span className="text-sm font-medium text-[var(--text)] min-w-28 sm:min-w-32 text-center whitespace-nowrap">
             {format(anchor, "MMMM yyyy")}
             {loading && <Loader2 className="inline w-3 h-3 ml-2 animate-spin text-[var(--text-3)]" />}
           </span>
-          <GlassButton variant="primary" size="sm" onClick={() => setModal({ mode: "create", day: selected })}>
+          <GlassButton variant="primary" size="sm" onClick={() => setModal({ mode: "create", day: selected })} className="whitespace-nowrap">
             <Plus className="w-3.5 h-3.5 mr-1.5" /> New event
           </GlassButton>
         </div>
@@ -343,7 +343,7 @@ export function CalendarView({
                   key={day.toISOString()}
                   onClick={() => setSelected(day)}
                   onDoubleClick={() => setModal({ mode: "create", day })}
-                  className={`relative min-h-[92px] rounded-xl p-1.5 text-left align-top transition-colors border ${
+                  className={`relative min-h-[58px] sm:min-h-[92px] rounded-lg sm:rounded-xl p-1 sm:p-1.5 text-left align-top transition-colors border ${
                     isSelected
                       ? "border-[var(--ice)] bg-[var(--glass-strong)]"
                       : "border-transparent hover:bg-[var(--glass)]"

@@ -164,7 +164,7 @@ function Flow({ id, title, initialNodes, initialEdges }: Props) {
   };
 
   return (
-    <div ref={wrapperRef} className="glass h-[calc(100vh-9rem)] relative overflow-hidden">
+    <div ref={wrapperRef} className="glass h-[calc(100dvh-11rem)] lg:h-[calc(100vh-9rem)] relative overflow-hidden">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -202,7 +202,7 @@ function Flow({ id, title, initialNodes, initialEdges }: Props) {
               onChange={(e) => setMapTitle(e.target.value)}
               onBlur={saveTitle}
               onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-              className="bg-transparent text-sm font-semibold text-[var(--text)] outline-none w-44"
+              className="bg-transparent text-sm font-semibold text-[var(--text)] outline-none w-24 sm:w-44"
             />
             <div className="w-px h-5 bg-[var(--glass-border)]" />
             <button
@@ -217,9 +217,9 @@ function Flow({ id, title, initialNodes, initialEdges }: Props) {
 
         {/* Color picker — only when a single node is selected */}
         {selectedNode && (
-          <Panel position="top-right" className="!m-3">
-            <div className="glass-card flex items-center gap-2 px-3 py-2">
-              <span className="text-xs text-[var(--text-3)]">Color</span>
+          <Panel position="top-right" className="!m-3 !mt-16 sm:!mt-3">
+            <div className="glass-card flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2">
+              <span className="hidden sm:inline text-xs text-[var(--text-3)]">Color</span>
               {NODE_COLORS.map((c) => (
                 <button
                   key={c.value}
