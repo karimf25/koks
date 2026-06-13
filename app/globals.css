@@ -52,7 +52,9 @@
   --secondary-foreground:  var(--text-2);
   --muted:                 var(--surface);
   --muted-foreground:      var(--text-3);
-  --accent:                var(--surface-2);
+  /* shadcn's "accent" token is NOT bridged: --accent must stay the brand
+     orange above — bridging it to surface-2 here silently overrode it
+     everywhere var(--accent) is used. */
   --accent-foreground:     var(--text);
   --destructive:           #E53E3E;
   --border:                var(--glass-border);
@@ -172,6 +174,20 @@
 
   .glow-teal {
     box-shadow: 0 0 20px rgba(32, 135, 142, 0.3);
+  }
+
+  /* iOS home-indicator clearance for the fixed bottom nav */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+/* Respect users who prefer less motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 

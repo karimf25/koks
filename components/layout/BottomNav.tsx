@@ -27,7 +27,7 @@ export function BottomNav() {
       className="lg:hidden fixed bottom-0 left-0 right-0 z-40 px-4 pb-safe"
       aria-label="Mobile navigation"
     >
-      <div className="glass rounded-t-none rounded-b-none rounded-[20px] mx-auto mb-4 px-2 py-2 flex items-center justify-around">
+      <div className="glass rounded-2xl mx-auto mb-4 px-2 py-2 flex items-center justify-around">
         {bottomItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
           const Icon = item.icon;

@@ -4,36 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
-import {
-  LayoutDashboard,
-  CheckSquare,
-  Lightbulb,
-  Calendar,
-  TableProperties,
-  FolderOpen,
-  BookOpen,
-  FileText,
-  GitBranch,
-  MessageSquare,
-  Play,
-  Zap,
-  Settings,
-} from "lucide-react";
+import { Settings } from "lucide-react";
+import { NAV_ITEMS } from "./nav-items";
 
-const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/tasks", label: "Tasks", icon: CheckSquare },
-  { href: "/ideas", label: "Ideas", icon: Lightbulb },
-  { href: "/calendar", label: "Calendar", icon: Calendar },
-  { href: "/planner", label: "Planner", icon: TableProperties },
-  { href: "/projects", label: "Projects", icon: FolderOpen },
-  { href: "/memory", label: "Memory Vault", icon: BookOpen },
-  { href: "/notes", label: "Notes", icon: FileText },
-  { href: "/mindmaps", label: "Mind Maps", icon: GitBranch },
-  { href: "/chat", label: "Claude Chat", icon: MessageSquare },
-  { href: "/recap", label: "Weekly Recap", icon: Play },
-  { href: "/automations", label: "Automations", icon: Zap },
-];
+const navItems = NAV_ITEMS;
 
 export function Sidebar() {
   const pathname = usePathname();
