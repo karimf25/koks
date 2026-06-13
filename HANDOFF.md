@@ -100,9 +100,19 @@ wedged pooler query then blocks every page render).
 ## Integrations
 
 - **Built-in chat** (`/chat`): streaming agentic loop, ~17 tools.
-- **MCP server** (`POST /api/mcp`): JSON-RPC (initialize / tools/list /
-  tools/call), `Authorization: Bearer ${MCP_API_KEY}`, ~30 tools. Lets external
-  Claude clients (Claude Code, Desktop) operate LifeOS.
+- **MCP server** (`POST /api/mcp`): JSON-RPC over HTTP (initialize / ping /
+  notifications / tools/list / tools/call), `Authorization: Bearer ${MCP_API_KEY}`,
+  32 tools. Lets external Claude clients operate LifeOS against the live data.
+
+  **Connect from Claude Code:** the project `../.mcp.json` (in the `koks/`
+  folder, one level above this repo) registers it as an `http` server named
+  `lifeos` pointing at the production URL. Requirements:
+  1. `MCP_API_KEY` in Vercel must equal the `Authorization: Bearer` value in
+     `.mcp.json` (redeploy after changing it in Vercel).
+  2. Restart Claude Code (or run `/mcp`) and approve the `lifeos` server.
+
+  For use outside this project folder, register it at user scope instead:
+  `claude mcp add -s user -t http lifeos https://koks-gamma.vercel.app/api/mcp -H "Authorization: Bearer <MCP_API_KEY>"`
 - **Microsoft To Do** (`lib/microsoft/`): two-way sync, last-write-wins;
   chosen MS list mirrors into LifeOS; loose LifeOS tasks (no project) push to
   MS; MS-deleted → cancelled (never hard-deleted). Parked: needs an Azure app
