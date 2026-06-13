@@ -8,6 +8,9 @@ import { getMemoryFiles, createMemoryFile, updateMemoryFile } from "@/lib/memory
 import { getNotes, getNote, createNote, updateNote } from "@/lib/notes";
 import { getLatestFocusRun } from "@/lib/focus";
 import { syncMicrosoftTodo } from "@/lib/microsoft/sync";
+import { getWeekRecap } from "@/lib/recap";
+import { getAutomations, getAutomation, createAutomation, runAutomation } from "@/lib/automations";
+import { createAutomationSchema } from "@/lib/automation-schemas";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -135,6 +138,38 @@ const tools: Anthropic.Tool[] = [
     description: "Run a two-way sync between LifeOS tasks and the connected Microsoft To Do list",
     input_schema: { type: "object", properties: {} },
   },
+  {
+    name: "get_weekly_recap",
+    description: "Get weekly recap stats (tasks completed, projects, ideas, notes, events). week 0 = current, -1 = last week.",
+    input_schema: {
+      type: "object",
+      properties: { week: { type: "number", description: "0 = this week, -1 = last week, etc." } },
+    },
+  },
+  {
+    name: "list_automations",
+    description: "List the user's automations (triggers + actions + enabled state)",
+    input_schema: { type: "object", properties: {} },
+  },
+  {
+    name: "create_automation",
+    description:
+      'Create an automation. trigger: {type:"schedule",frequency:"daily"} | {type:"schedule",frequency:"weekly",weekday:0-6} | {type:"tasks_overdue",minCount:n} | {type:"ideas_stale",days:n}. action: {type:"create_task",title,priority?,dueInDays?} | {type:"run_focus_engine"} | {type:"ai_note",prompt,noteTitle}.',
+    input_schema: {
+      type: "object",
+      properties: {
+        name: { type: "string" },
+        trigger: { type: "object" },
+        action: { type: "object" },
+      },
+      required: ["name", "trigger", "action"],
+    },
+  },
+  {
+    name: "run_automation",
+    description: "Run an automation immediately by id (skips the trigger check)",
+    input_schema: { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
+  },
 ];
 
 async function executeTool(name: string, input: Record<string, any>): Promise<string> {
@@ -190,6 +225,19 @@ async function executeTool(name: string, input: Record<string, any>): Promise<st
       }
       case "sync_microsoft_todo":
         return JSON.stringify(await syncMicrosoftTodo());
+      case "get_weekly_recap":
+        return JSON.stringify(await getWeekRecap(Math.min(0, input.week ?? 0)));
+      case "list_automations":
+        return JSON.stringify(await getAutomations());
+      case "create_automation": {
+        const parsed = createAutomationSchema.parse(input);
+        return JSON.stringify(await createAutomation(parsed));
+      }
+      case "run_automation": {
+        const automation = await getAutomation(input.id);
+        if (!automation) return JSON.stringify({ error: "Automation not found" });
+        return JSON.stringify(await runAutomation(automation, true));
+      }
       default:
         return JSON.stringify({ error: "Unknown tool" });
     }

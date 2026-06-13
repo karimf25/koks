@@ -149,3 +149,5 @@ export type Note = typeof notes.$inferSelect;
 export type Mindmap = typeof mindmaps.$inferSelect;
 export type MemoryFile = typeof memoryFiles.$inferSelect;
 export type FocusRun = typeof focusRuns.$inferSelect;
+export type Automation = typeof automations.$inferSelect;
+export type AgentRun = typeof agentRuns.$inferSelect;

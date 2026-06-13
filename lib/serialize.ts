@@ -1,4 +1,4 @@
-import type { Task, Project, Event, FocusRun, Idea, MemoryFile, Note, Mindmap } from "@/db";
+import type { Task, Project, Event, FocusRun, Idea, MemoryFile, Note, Mindmap, Automation, AgentRun } from "@/db";
 
 export type SerializedTask = Omit<Task, "dueDate" | "createdAt" | "updatedAt" | "completedAt"> & {
   dueDate: string | null;
@@ -98,4 +98,22 @@ export type SerializedMindmap = Omit<Mindmap, "createdAt" | "updatedAt"> & {
 
 export function serializeMindmap(m: Mindmap): SerializedMindmap {
   return { ...m, createdAt: isoReq(m.createdAt), updatedAt: isoReq(m.updatedAt) };
+}
+
+export type SerializedAutomation = Omit<Automation, "lastRunAt" | "createdAt"> & {
+  lastRunAt: string | null;
+  createdAt: string;
+};
+
+export function serializeAutomation(a: Automation): SerializedAutomation {
+  return { ...a, lastRunAt: iso(a.lastRunAt), createdAt: isoReq(a.createdAt) };
+}
+
+export type SerializedAgentRun = Omit<AgentRun, "startedAt" | "finishedAt"> & {
+  startedAt: string;
+  finishedAt: string | null;
+};
+
+export function serializeAgentRun(r: AgentRun): SerializedAgentRun {
+  return { ...r, startedAt: isoReq(r.startedAt), finishedAt: iso(r.finishedAt) };
 }

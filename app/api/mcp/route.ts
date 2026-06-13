@@ -14,6 +14,17 @@ import { getNotes, getNote, createNote, updateNote, deleteNote } from "@/lib/not
 import { getMindmaps, getMindmap, createMindmap } from "@/lib/mindmaps";
 import { getLatestFocusRun, runFocusEngine } from "@/lib/focus";
 import { syncMicrosoftTodo } from "@/lib/microsoft/sync";
+import { getWeekRecap } from "@/lib/recap";
+import {
+  getAutomations,
+  getAutomation,
+  createAutomation,
+  updateAutomation,
+  deleteAutomation,
+  runAutomation,
+  getRecentRuns,
+} from "@/lib/automations";
+import { createAutomationSchema, updateAutomationSchema } from "@/lib/automation-schemas";
 
 // ── Tool definitions ─────────────────────────────────────────────────────────
 
@@ -223,6 +234,64 @@ const TOOLS = [
     description: "Run a two-way sync between LifeOS tasks and the connected Microsoft To Do list",
     inputSchema: { type: "object", properties: {} },
   },
+  {
+    name: "get_weekly_recap",
+    description: "Get weekly recap stats. week 0 = current week, -1 = last week, etc.",
+    inputSchema: {
+      type: "object",
+      properties: { week: { type: "number" } },
+    },
+  },
+  {
+    name: "list_automations",
+    description: "List automations with their triggers, actions, and enabled state",
+    inputSchema: { type: "object", properties: {} },
+  },
+  {
+    name: "create_automation",
+    description:
+      'Create an automation. trigger: {type:"schedule",frequency:"daily"} | {type:"schedule",frequency:"weekly",weekday:0-6} | {type:"tasks_overdue",minCount:n} | {type:"ideas_stale",days:n}. action: {type:"create_task",title,priority?,dueInDays?} | {type:"run_focus_engine"} | {type:"ai_note",prompt,noteTitle}.',
+    inputSchema: {
+      type: "object",
+      properties: {
+        name: { type: "string" },
+        trigger: { type: "object" },
+        action: { type: "object" },
+        enabled: { type: "boolean" },
+      },
+      required: ["name", "trigger", "action"],
+    },
+  },
+  {
+    name: "update_automation",
+    description: "Update an automation (name, trigger, action, or enabled)",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+        name: { type: "string" },
+        trigger: { type: "object" },
+        action: { type: "object" },
+        enabled: { type: "boolean" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "delete_automation",
+    description: "Delete an automation by id",
+    inputSchema: { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
+  },
+  {
+    name: "run_automation",
+    description: "Run an automation immediately by id (skips the trigger check)",
+    inputSchema: { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
+  },
+  {
+    name: "list_automation_runs",
+    description: "List recent automation run history",
+    inputSchema: { type: "object", properties: {} },
+  },
 ] as const;
 
 // ── Tool executor ─────────────────────────────────────────────────────────────
@@ -301,6 +370,26 @@ async function callTool(name: string, input: Record<string, any>): Promise<strin
       return JSON.stringify(await createMindmap({ title: input.title, projectId: input.projectId }));
     case "sync_microsoft_todo":
       return JSON.stringify(await syncMicrosoftTodo());
+    case "get_weekly_recap":
+      return JSON.stringify(await getWeekRecap(Math.min(0, input.week ?? 0)));
+    case "list_automations":
+      return JSON.stringify(await getAutomations());
+    case "create_automation":
+      return JSON.stringify(await createAutomation(createAutomationSchema.parse(input)));
+    case "update_automation": {
+      const { id, ...rest } = input;
+      return JSON.stringify(await updateAutomation(id, updateAutomationSchema.parse(rest)));
+    }
+    case "delete_automation":
+      await deleteAutomation(input.id);
+      return "deleted";
+    case "run_automation": {
+      const automation = await getAutomation(input.id);
+      if (!automation) return "not found";
+      return JSON.stringify(await runAutomation(automation, true));
+    }
+    case "list_automation_runs":
+      return JSON.stringify(await getRecentRuns());
     default:
       throw new Error(`Unknown tool: ${name}`);
   }
