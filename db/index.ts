@@ -5,10 +5,14 @@ import * as schema from "./schema";
 
 function createClient() {
   return postgres(process.env.DATABASE_URL as string, {
-    max: 1,
+    // A few connections so one slow/wedged query can't block every other
+    // request (pages render several queries; with max:1 they all serialize
+    // behind a single pooler connection).
+    max: 4,
     ssl: "require",
     prepare: false,
     idle_timeout: 20, // release idle pooler connections quickly
+    connect_timeout: 15,
     types: {
       // OID 1082 = date — return as YYYY-MM-DD string so PgDateString.mapFromDriverValue
       // receives a string and short-circuits instead of calling .toISOString() on a Date.

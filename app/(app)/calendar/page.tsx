@@ -1,20 +1,29 @@
 import { Metadata } from "next";
-import { GlassPanel } from "@/components/glass";
-import { Calendar } from "lucide-react";
+import { startOfMonth, endOfMonth, startOfWeek, endOfWeek } from "date-fns";
+import { getEvents } from "@/lib/events";
+import { getTasks } from "@/lib/tasks";
+import { getProjects } from "@/lib/projects";
+import { serializeEvent, serializeTask, serializeProject } from "@/lib/serialize";
+import { CalendarView } from "./_components/CalendarView";
 
 export const metadata: Metadata = { title: "Calendar — LifeOS" };
 
-export default function CalendarPage() {
+export default async function CalendarPage() {
+  const now = new Date();
+  const from = startOfWeek(startOfMonth(now), { weekStartsOn: 1 });
+  const to = endOfWeek(endOfMonth(now), { weekStartsOn: 1 });
+
+  const [events, tasks, projects] = await Promise.all([
+    getEvents({ from, to }),
+    getTasks(),
+    getProjects(),
+  ]);
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-[var(--cream)]">Calendar</h1>
-        <p className="text-sm text-[var(--text-3)] mt-1">Your schedule at a glance</p>
-      </div>
-      <GlassPanel className="flex flex-col items-center justify-center py-20 gap-3">
-        <Calendar className="w-8 h-8 text-[var(--text-3)]" />
-        <p className="text-[var(--text-3)] text-sm">Calendar coming in Phase 1</p>
-      </GlassPanel>
-    </div>
+    <CalendarView
+      initialEvents={events.map(serializeEvent)}
+      tasks={tasks.filter((t) => t.dueDate || t.scheduledDate).map(serializeTask)}
+      projects={projects.map(serializeProject)}
+    />
   );
 }
