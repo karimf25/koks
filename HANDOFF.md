@@ -57,6 +57,7 @@ changing them in Vercel).
 | `APP_URL` | `http://localhost:3000` locally, prod URL in Vercel |
 | `MS_CLIENT_ID` / `MS_CLIENT_SECRET` / `MS_TENANT` | Microsoft To Do OAuth (currently empty — connection parked) |
 | `CRON_SECRET` | Bearer guard for `/api/cron/sync` (Vercel sends it automatically) |
+| `REMOTION_*` (5 vars) | Weekly Recap MP4 export via Remotion Lambda — see `RECAP_EXPORT.md` (optional; button degrades gracefully when unset) |
 
 ## Architecture rules (read before changing code)
 

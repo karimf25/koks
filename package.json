@@ -10,13 +10,20 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
-    "hash-password": "tsx scripts/hash-password.ts"
+    "hash-password": "tsx scripts/hash-password.ts",
+    "recap:studio": "remotion studio remotion/index.ts",
+    "recap:render": "remotion render remotion/index.ts WeeklyRecap out/recap.mp4",
+    "recap:deploy": "tsx scripts/deploy-remotion-lambda.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.1",
     "@base-ui/react": "^1.5.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
+    "@remotion/bundler": "^4.0.476",
+    "@remotion/cli": "^4.0.476",
+    "@remotion/lambda": "^4.0.476",
     "@remotion/player": "^4.0.476",
+    "@remotion/renderer": "^4.0.476",
     "@supabase/supabase-js": "^2.108.1",
     "@xyflow/react": "^12.11.0",
     "bcryptjs": "^3.0.3",

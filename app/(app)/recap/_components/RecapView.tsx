@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Player } from "@remotion/player";
 import { useRouter } from "next/navigation";
 import { GlassPanel, GlassButton } from "@/components/glass";
@@ -12,7 +12,7 @@ import {
   RECAP_HEIGHT,
 } from "./RecapComposition";
 import type { WeekRecapData } from "@/lib/recap";
-import { ChevronLeft, ChevronRight, Sparkles, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sparkles, Loader2, Download, Film } from "lucide-react";
 
 export function RecapView({ data, weekOffset }: { data: WeekRecapData; weekOffset: number }) {
   const router = useRouter();
@@ -20,8 +20,56 @@ export function RecapView({ data, weekOffset }: { data: WeekRecapData; weekOffse
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Video export (Remotion Lambda)
+  const [exportConfigured, setExportConfigured] = useState<boolean | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState(0);
+  const [exportError, setExportError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/recap/render")
+      .then((r) => r.json())
+      .then((r) => setExportConfigured(!!r.configured))
+      .catch(() => setExportConfigured(false));
+  }, []);
+
   const goToWeek = (offset: number) => {
     router.push(offset === 0 ? "/recap" : `/recap?week=${offset}`);
+  };
+
+  const exportVideo = async () => {
+    setExporting(true);
+    setExportError(null);
+    setExportProgress(0);
+    try {
+      const start = await fetch("/api/recap/render", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ week: weekOffset, summary }),
+      });
+      const job = await start.json();
+      if (!start.ok) throw new Error(job.error || "Could not start the render");
+      const { renderId, bucketName } = job;
+
+      // Poll progress until done (or it errors).
+      while (true) {
+        await new Promise((r) => setTimeout(r, 2000));
+        const res = await fetch(
+          `/api/recap/render/progress?renderId=${renderId}&bucketName=${bucketName}`
+        );
+        const p = await res.json();
+        if (p.error) throw new Error(p.error);
+        setExportProgress(Math.round((p.progress ?? 0) * 100));
+        if (p.done && p.url) {
+          window.open(p.url, "_blank");
+          break;
+        }
+      }
+    } catch (e) {
+      setExportError(e instanceof Error ? e.message : "Export failed");
+    } finally {
+      setExporting(false);
+    }
   };
 
   const generateSummary = async () => {
@@ -84,6 +132,32 @@ export function RecapView({ data, weekOffset }: { data: WeekRecapData; weekOffse
             initiallyMuted
             acknowledgeRemotionLicense
           />
+        </div>
+        {/* Export row */}
+        <div className="flex items-center gap-3 flex-wrap px-1 pt-3">
+          <GlassButton
+            variant="secondary"
+            size="sm"
+            onClick={exportVideo}
+            disabled={exporting || exportConfigured === false}
+            title={
+              exportConfigured === false
+                ? "Video export isn't set up yet — see HANDOFF.md"
+                : "Render and download this recap as an MP4"
+            }
+          >
+            {exporting ? (
+              <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Rendering… {exportProgress}%</>
+            ) : (
+              <><Download className="w-3.5 h-3.5 mr-1.5" /> Download MP4</>
+            )}
+          </GlassButton>
+          {exportConfigured === false && (
+            <span className="flex items-center gap-1.5 text-xs text-[var(--text-3)]">
+              <Film className="w-3.5 h-3.5" /> Cloud export not set up yet
+            </span>
+          )}
+          {exportError && <span className="text-xs text-[#FC8181]">{exportError}</span>}
         </div>
       </GlassPanel>
 

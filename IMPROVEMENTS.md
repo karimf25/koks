@@ -34,9 +34,11 @@ daily use — the platform is feature-complete for its original five phases.
 
 ## Medium
 
-- [ ] **Recap video export** — the recap plays via `@remotion/player` in the
-      browser; actual MP4 rendering needs `@remotion/renderer` on a server or
-      Remotion Lambda. Player-only is fine until sharing matters.
+- [x] **Recap video export** — DONE. In-app "Download MP4" button renders the
+      selected week on Remotion Lambda (`/api/recap/render` + `/progress`,
+      `lib/recap-render.ts`, `remotion/` composition root). Needs one-time AWS
+      provisioning + the `REMOTION_*` env vars — see `RECAP_EXPORT.md`. Local
+      `npm run recap:render` works with no AWS.
 - [ ] **More automation triggers/actions** — e.g. trigger: "task completed in
       project X", "no focus run today"; action: "send email", "archive stale
       ideas", "create event".
