@@ -422,13 +422,24 @@ export async function POST(request: NextRequest) {
 
   const { id, method, params } = body;
 
+  // Notifications (e.g. "notifications/initialized") have no id and expect no
+  // response body — acknowledge with 202 so MCP clients don't see an error.
+  if (method?.startsWith("notifications/") || id === undefined) {
+    return new NextResponse(null, { status: 202 });
+  }
+
   try {
     if (method === "initialize") {
       return jsonrpc(id, {
-        protocolVersion: "2024-11-05",
+        // Echo the client's protocol version when it sends one we can speak.
+        protocolVersion: params?.protocolVersion ?? "2024-11-05",
         serverInfo: { name: "lifeos", version: "1.0.0" },
-        capabilities: { tools: {} },
+        capabilities: { tools: { listChanged: false } },
       });
+    }
+
+    if (method === "ping") {
+      return jsonrpc(id, {});
     }
 
     if (method === "tools/list") {
