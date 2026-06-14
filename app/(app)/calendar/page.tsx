@@ -22,7 +22,7 @@ export default async function CalendarPage() {
   return (
     <CalendarView
       initialEvents={events.map(serializeEvent)}
-      tasks={tasks.filter((t) => t.dueDate || t.scheduledDate).map(serializeTask)}
+      tasks={tasks.map(serializeTask)}
       projects={projects.map(serializeProject)}
     />
   );

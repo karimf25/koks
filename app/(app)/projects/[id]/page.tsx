@@ -2,9 +2,11 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getProject, getProjects, AREA_COLORS } from "@/lib/projects";
 import { getTasks } from "@/lib/tasks";
-import { serializeTask, serializeProject, serializeTaskGroup } from "@/lib/serialize";
 import { getTaskGroups } from "@/lib/task-groups";
-import { TaskList } from "../../tasks/_components/TaskList";
+import { getEvents } from "@/lib/events";
+import { getNotes } from "@/lib/notes";
+import { serializeTask, serializeProject, serializeTaskGroup, serializeEvent, serializeNote } from "@/lib/serialize";
+import { ProjectTabs } from "./_components/ProjectTabs";
 import { GlassPanel } from "@/components/glass";
 
 export async function generateMetadata({
@@ -23,15 +25,19 @@ export default async function ProjectDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [project, rawTasks, rawAllProjects, rawGroups] = await Promise.all([
+  const [project, rawTasks, rawAllProjects, rawGroups, rawEvents, rawNotes] = await Promise.all([
     getProject(id),
     getTasks({ projectId: id }),
     getProjects(),
     getTaskGroups(),
+    getEvents({ projectId: id }),
+    getNotes({ projectId: id }),
   ]);
   const tasks = rawTasks.map(serializeTask);
   const allProjects = rawAllProjects.map(serializeProject);
   const groups = rawGroups.map(serializeTaskGroup);
+  const events = rawEvents.map(serializeEvent);
+  const projectNotes = rawNotes.map(serializeNote);
 
   if (!project) notFound();
 
@@ -73,7 +79,14 @@ export default async function ProjectDetailPage({
         </GlassPanel>
       )}
 
-      <TaskList initialTasks={tasks} projects={allProjects} initialGroups={groups} />
+      <ProjectTabs
+        projectId={id}
+        tasks={tasks}
+        projects={allProjects}
+        groups={groups}
+        events={events}
+        notes={projectNotes}
+      />
     </div>
   );
 }

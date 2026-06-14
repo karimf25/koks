@@ -16,7 +16,18 @@ import {
   Loader2,
   CalendarDays,
   CheckSquare,
+  Repeat,
+  Link2,
 } from "lucide-react";
+
+const RECURRENCE_OPTIONS = [
+  { label: "Does not repeat", value: "" },
+  { label: "Daily", value: "RRULE:FREQ=DAILY" },
+  { label: "Every weekday", value: "RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR" },
+  { label: "Weekly", value: "RRULE:FREQ=WEEKLY" },
+  { label: "Monthly", value: "RRULE:FREQ=MONTHLY" },
+  { label: "Yearly", value: "RRULE:FREQ=YEARLY" },
+] as const;
 import {
   startOfMonth,
   endOfMonth,
@@ -66,12 +77,14 @@ type ModalState = { mode: "create"; day: Date } | { mode: "edit"; event: Ev } | 
 function EventModal({
   state,
   projects,
+  tasks,
   onClose,
   onSaved,
   onDeleted,
 }: {
   state: NonNullable<ModalState>;
   projects: SerializedProject[];
+  tasks: SerializedTask[];
   onClose: () => void;
   onSaved: () => void;
   onDeleted: () => void;
@@ -85,8 +98,10 @@ function EventModal({
   const [endTime, setEndTime] = useState(editing ? format(parseISO(editing.end), "HH:mm") : "10:00");
   const [allDay, setAllDay] = useState(editing?.allDay ?? false);
   const [projectId, setProjectId] = useState(editing?.projectId ?? "");
+  const [taskId, setTaskId] = useState(editing?.taskId ?? "");
   const [location, setLocation] = useState(editing?.location ?? "");
   const [description, setDescription] = useState(editing?.description ?? "");
+  const [recurrence, setRecurrence] = useState(editing?.recurrence ?? "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -94,10 +109,7 @@ function EventModal({
     if (!title.trim()) return;
     setBusy(true);
     setError(null);
-    // Construct Dates locally so the user's timezone is respected end-to-end
-    const start = allDay
-      ? startOfDay(parseISO(date))
-      : new Date(`${date}T${startTime}`);
+    const start = allDay ? startOfDay(parseISO(date)) : new Date(`${date}T${startTime}`);
     const end = allDay ? endOfDay(parseISO(date)) : new Date(`${date}T${endTime}`);
     if (end < start) {
       setError("End time is before start time.");
@@ -110,8 +122,10 @@ function EventModal({
       end: end.toISOString(),
       allDay,
       projectId: projectId || undefined,
+      taskId: taskId || undefined,
       location: location.trim() || undefined,
       description: description.trim() || undefined,
+      recurrence: recurrence || undefined,
     };
     const res = editing
       ? await fetch(`/api/events/${editing.id}`, {
@@ -215,6 +229,29 @@ function EventModal({
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Description (optional)"
           />
+
+          {/* M3.1 — Recurrence */}
+          <div className="flex items-center gap-2">
+            <Repeat className="w-3.5 h-3.5 text-[var(--text-3)] flex-shrink-0" />
+            <select className={`${inputCls} flex-1`} value={recurrence} onChange={(e) => setRecurrence(e.target.value)}>
+              {RECURRENCE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* M3.2 — Link to task */}
+          {tasks.length > 0 && (
+            <div className="flex items-center gap-2">
+              <Link2 className="w-3.5 h-3.5 text-[var(--text-3)] flex-shrink-0" />
+              <select className={`${inputCls} flex-1`} value={taskId ?? ""} onChange={(e) => setTaskId(e.target.value)}>
+                <option value="">No linked task</option>
+                {tasks.filter((t) => t.status !== "done" && t.status !== "cancelled").map((t) => (
+                  <option key={t.id} value={t.id}>{t.title}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {error && <p className="text-xs text-[#FC8181]">{error}</p>}
 
@@ -380,6 +417,7 @@ export function CalendarView({
                         }}
                         title={e.title}
                       >
+                        {e.recurrence && <Repeat className="inline w-2.5 h-2.5 mr-0.5 opacity-60" />}
                         {!e.allDay && (
                           <span className="text-[var(--text-2)] mr-1">{format(parseISO(e.start), "HH:mm")}</span>
                         )}
@@ -495,15 +533,10 @@ export function CalendarView({
           <EventModal
             state={modal}
             projects={projects}
+            tasks={tasks}
             onClose={() => setModal(null)}
-            onSaved={() => {
-              setModal(null);
-              refresh();
-            }}
-            onDeleted={() => {
-              setModal(null);
-              refresh();
-            }}
+            onSaved={() => { setModal(null); refresh(); }}
+            onDeleted={() => { setModal(null); refresh(); }}
           />
         )}
       </AnimatePresence>
