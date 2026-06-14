@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { GlassCard, GlassButton } from "@/components/glass";
-import { Plus, Lightbulb, TrendingUp, Archive, X, Bookmark, Pencil, Check } from "lucide-react";
+import { Plus, Lightbulb, TrendingUp, Archive, X, Bookmark, Pencil, Check, Sparkles, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import type { SerializedIdea } from "@/lib/serialize";
 
@@ -31,7 +31,21 @@ export function IdeasBoard({ initialIdeas }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editBody, setEditBody] = useState("");
+  const [verdictLoadingId, setVerdictLoadingId] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+
+  const getVerdict = async (id: string) => {
+    setVerdictLoadingId(id);
+    try {
+      const res = await fetch(`/api/ideas/${id}/verdict`, { method: "POST" });
+      if (res.ok) {
+        const { verdict } = await res.json();
+        setIdeas((prev) => prev.map((i) => i.id === id ? { ...i, aiVerdict: verdict } : i));
+      }
+    } finally {
+      setVerdictLoadingId(null);
+    }
+  };
 
   const startEdit = (idea: Idea) => {
     setEditingId(idea.id);
@@ -210,6 +224,11 @@ export function IdeasBoard({ initialIdeas }: Props) {
                         {idea.body && (
                           <p className="text-xs text-[var(--text-3)] mt-1 line-clamp-2">{idea.body}</p>
                         )}
+                        {idea.aiVerdict && (
+                          <p className="text-xs text-[var(--text-2)] mt-2 italic leading-relaxed border-l-2 border-[var(--accent)] pl-2">
+                            {idea.aiVerdict}
+                          </p>
+                        )}
                         <p className="text-xs text-[var(--text-3)] mt-2">
                           {formatDistanceToNow(new Date(idea.createdAt), { addSuffix: true })}
                         </p>
@@ -224,6 +243,19 @@ export function IdeasBoard({ initialIdeas }: Props) {
                         )}
                         {activeTab !== "inbox" && (
                           <ActionBtn label="Inbox" color="var(--accent)" onClick={() => moveIdea(idea.id, "inbox")} />
+                        )}
+                        {activeTab === "inbox" && (
+                          <button
+                            onClick={() => getVerdict(idea.id)}
+                            disabled={verdictLoadingId === idea.id}
+                            className="p-1 rounded hover:text-[var(--accent)] transition-colors"
+                            style={{ color: "var(--text-3)" }}
+                            title="Get AI verdict"
+                          >
+                            {verdictLoadingId === idea.id
+                              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              : <Sparkles className="w-3.5 h-3.5" />}
+                          </button>
                         )}
                         <button onClick={() => startEdit(idea)} className="p-1 rounded hover:text-[var(--accent)] transition-colors" style={{ color: "var(--text-3)" }} title="Edit">
                           <Pencil className="w-3.5 h-3.5" />

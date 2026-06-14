@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useTransition, useCallback } from "react";
+import { useState, useTransition, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { GlassCard, GlassButton } from "@/components/glass";
-import { Plus, BookOpen, Cpu, FileText, Lightbulb, Search, Trash2, ChevronRight, ChevronLeft, Download } from "lucide-react";
+import { Plus, BookOpen, Cpu, FileText, Lightbulb, Search, Trash2, ChevronRight, ChevronLeft, Download, Loader2 } from "lucide-react";
 import type { SerializedMemoryFile } from "@/lib/serialize";
 type MemoryFile = SerializedMemoryFile;
 import { MEMORY_KINDS } from "@/lib/memory-constants";
@@ -39,6 +39,41 @@ export function VaultList({ initialFiles }: Props) {
   const [contentDirty, setContentDirty] = useState(false);
   const [form, setForm] = useState({ path: "", title: "", kind: "conversation", summary: "", contentText: "" });
   const [pending, startTransition] = useTransition();
+  const [searchResults, setSearchResults] = useState<MemoryFile[] | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+
+  useEffect(() => {
+    if (!search.trim()) {
+      setSearchResults(null);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const res = await fetch(`/api/memory/search?q=${encodeURIComponent(search.trim())}`);
+        if (res.ok) {
+          const rows = await res.json();
+          // Map snake_case SQL result to camelCase MemoryFile shape
+          setSearchResults(
+            rows.map((r: any) => ({
+              id: r.id,
+              path: r.path,
+              title: r.title,
+              summary: r.summary ?? null,
+              contentText: r.content_text ?? "",
+              kind: r.kind ?? "conversation",
+              projectId: r.project_id ?? null,
+              createdAt: r.created_at,
+              updatedAt: r.updated_at,
+            }))
+          );
+        }
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const selectFile = (f: MemoryFile) => {
     setSelected(f);
@@ -68,14 +103,9 @@ export function VaultList({ initialFiles }: Props) {
     URL.revokeObjectURL(url);
   };
 
-  const filtered = files.filter((f) => {
-    if (kindFilter !== "all" && f.kind !== kindFilter) return false;
-    if (search) {
-      const q = search.toLowerCase();
-      return f.title.toLowerCase().includes(q) || (f.summary ?? "").toLowerCase().includes(q);
-    }
-    return true;
-  });
+  const filtered = searchResults !== null
+    ? searchResults.filter((f) => kindFilter === "all" || f.kind === kindFilter)
+    : files.filter((f) => kindFilter === "all" || f.kind === kindFilter);
 
   const save = () => {
     if (!form.path.trim() || !form.title.trim()) return;
@@ -116,11 +146,13 @@ export function VaultList({ initialFiles }: Props) {
         {/* Search + filter */}
         <div className="glass-card p-3 flex flex-col gap-2">
           <div className="flex items-center gap-2 border-b border-[var(--glass-border)] pb-2">
-            <Search className="w-3.5 h-3.5 text-[var(--text-3)]" />
+            {isSearching
+              ? <Loader2 className="w-3.5 h-3.5 text-[var(--text-3)] animate-spin" />
+              : <Search className="w-3.5 h-3.5 text-[var(--text-3)]" />}
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search…"
+              placeholder="Search vault…"
               className="bg-transparent text-sm outline-none flex-1 text-[var(--text)] placeholder:text-[var(--text-3)]"
             />
           </div>

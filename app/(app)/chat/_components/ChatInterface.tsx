@@ -27,6 +27,7 @@ export function ChatInterface({ hasApiKey }: { hasApiKey: boolean }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
+  const [sessionTokens, setSessionTokens] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -102,6 +103,8 @@ export function ChatInterface({ hasApiKey }: { hasApiKey: boolean }) {
               parts.push({ type: "tool", name: data.name });
             } else if (data.type === "error") {
               parts.push({ type: "error", message: data.message });
+            } else if (data.type === "usage") {
+              setSessionTokens((n) => n + (data.outputTokens ?? 0));
             }
 
             msgs[msgs.length - 1] = { role: "assistant", parts };
@@ -143,6 +146,14 @@ export function ChatInterface({ hasApiKey }: { hasApiKey: boolean }) {
 
   return (
     <div className="flex flex-col h-[calc(100dvh-20rem)] lg:h-[calc(100vh-12rem)]">
+      {/* Usage strip */}
+      {sessionTokens > 0 && (
+        <div className="flex justify-end mb-2">
+          <span className="text-[10px] font-mono text-[var(--text-3)] px-2 py-0.5 rounded-full bg-[var(--glass-strong)]">
+            ~{sessionTokens.toLocaleString()} tokens this session
+          </span>
+        </div>
+      )}
       {/* Messages */}
       <div ref={listRef} className="flex-1 overflow-y-auto flex flex-col gap-4 pb-4">
         {messages.length === 0 && (

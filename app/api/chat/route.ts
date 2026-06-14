@@ -310,6 +310,9 @@ export async function POST(request: NextRequest) {
                 } catch {}
               }
             } else if (event.type === "message_delta") {
+              if (event.usage) {
+                send({ type: "usage", outputTokens: event.usage.output_tokens });
+              }
               if (event.delta.stop_reason === "end_turn") {
                 send({ type: "done" });
                 controller.close();
