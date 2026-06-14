@@ -1,4 +1,4 @@
-import type { Task, Project, Event, FocusRun, Idea, MemoryFile, Note, Mindmap, Automation, AgentRun, Attachment } from "@/db";
+import type { Task, Project, Event, FocusRun, Idea, MemoryFile, Note, Mindmap, Automation, AgentRun, Attachment, TaskGroup } from "@/db";
 
 export type SerializedTask = Omit<Task, "dueDate" | "createdAt" | "updatedAt" | "completedAt"> & {
   dueDate: string | null;
@@ -122,4 +122,10 @@ export type SerializedAttachment = Omit<Attachment, "createdAt"> & { createdAt: 
 
 export function serializeAttachment(a: Attachment): SerializedAttachment {
   return { ...a, createdAt: isoReq(a.createdAt) };
+}
+
+export type SerializedTaskGroup = Omit<TaskGroup, "createdAt"> & { createdAt: string };
+
+export function serializeTaskGroup(g: TaskGroup): SerializedTaskGroup {
+  return { ...g, createdAt: isoReq(g.createdAt) };
 }

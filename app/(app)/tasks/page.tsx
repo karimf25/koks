@@ -1,15 +1,21 @@
 import { Metadata } from "next";
 import { getTasks } from "@/lib/tasks";
 import { getProjects } from "@/lib/projects";
-import { serializeTask, serializeProject } from "@/lib/serialize";
+import { getTaskGroups } from "@/lib/task-groups";
+import { serializeTask, serializeProject, serializeTaskGroup } from "@/lib/serialize";
 import { TaskList } from "./_components/TaskList";
 
 export const metadata: Metadata = { title: "Tasks — LifeOS" };
 
 export default async function TasksPage() {
-  const [rawTasks, rawProjects] = await Promise.all([getTasks(), getProjects()]);
+  const [rawTasks, rawProjects, rawGroups] = await Promise.all([
+    getTasks(),
+    getProjects(),
+    getTaskGroups(),
+  ]);
   const tasks = rawTasks.map(serializeTask);
   const projects = rawProjects.map(serializeProject);
+  const groups = rawGroups.map(serializeTaskGroup);
 
   return (
     <div className="space-y-6">
@@ -19,7 +25,7 @@ export default async function TasksPage() {
           {tasks.length} task{tasks.length !== 1 ? "s" : ""} across all projects
         </p>
       </div>
-      <TaskList initialTasks={tasks} projects={projects} />
+      <TaskList initialTasks={tasks} projects={projects} initialGroups={groups} />
     </div>
   );
 }

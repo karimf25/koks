@@ -5,10 +5,13 @@ import { z } from "zod";
 const updateSchema = z.object({
   title: z.string().min(1).optional(),
   description: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
   projectId: z.string().uuid().nullable().optional(),
+  groupId: z.string().uuid().nullable().optional(),
   priority: z.number().int().min(1).max(3).optional(),
   status: z.enum(["todo", "in_progress", "done", "cancelled"]).optional(),
   isFocus: z.boolean().optional(),
+  isMyDay: z.boolean().optional(),
   dueDate: z.string().nullable().optional(),
   scheduledDate: z.string().nullable().optional(),
   recurrence: z.string().nullable().optional(),

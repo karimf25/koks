@@ -5,7 +5,9 @@ import { startOfDay, endOfDay, startOfWeek, endOfWeek, addDays } from "date-fns"
 export type CreateTaskInput = {
   title: string;
   description?: string;
+  notes?: string;
   projectId?: string;
+  groupId?: string;
   priority?: number;
   status?: string;
   dueDate?: string | null;
@@ -15,14 +17,20 @@ export type CreateTaskInput = {
   msTodoId?: string;
   msListId?: string;
   completedAt?: string | Date | null;
+  isMyDay?: boolean;
+  addToMyDay?: boolean; // M1.6 — automation alias for isMyDay
 };
 
 export type UpdateTaskInput = Partial<CreateTaskInput> & {
   status?: Task["status"];
   isFocus?: boolean;
+  isMyDay?: boolean;
+  myDayDate?: string | null;
   completedAt?: string | Date | null;
   msTodoId?: string | null;
   msListId?: string | null;
+  groupId?: string | null;
+  notes?: string | null;
 };
 
 export async function getTasks(filters?: {
@@ -76,16 +84,19 @@ export async function getTask(id: string) {
 }
 
 export async function createTask(input: CreateTaskInput): Promise<Task> {
-  // New tasks land at the end of the manual order.
   const [{ next }] = await db
     .select({ next: sql<number>`coalesce(max(${tasks.position}), 0) + 1` })
     .from(tasks);
+  const myDay = input.isMyDay ?? input.addToMyDay ?? false;
+  const today = new Date().toISOString().split("T")[0];
   const [task] = await db
     .insert(tasks)
     .values({
       title: input.title,
       description: input.description,
+      notes: input.notes,
       projectId: input.projectId as any,
+      groupId: input.groupId as any,
       priority: input.priority ?? 2,
       status: input.status ?? "todo",
       dueDate: input.dueDate ? new Date(input.dueDate) : undefined,
@@ -95,6 +106,8 @@ export async function createTask(input: CreateTaskInput): Promise<Task> {
       msTodoId: input.msTodoId,
       msListId: input.msListId,
       position: Number(next) || 0,
+      isMyDay: myDay,
+      myDayDate: myDay ? today : undefined,
       completedAt: input.completedAt ? new Date(input.completedAt) : undefined,
     })
     .returning();
@@ -114,23 +127,28 @@ export async function reorderTasks(orderedIds: string[]): Promise<void> {
 }
 
 export async function updateTask(id: string, input: UpdateTaskInput): Promise<Task | null> {
-  const updates: Partial<typeof tasks.$inferInsert> = {
-    updatedAt: new Date(),
-  };
+  const today = new Date().toISOString().split("T")[0];
+  const updates: Partial<typeof tasks.$inferInsert> = { updatedAt: new Date() };
 
   if (input.title !== undefined) updates.title = input.title;
   if (input.description !== undefined) updates.description = input.description;
+  if (input.notes !== undefined) updates.notes = input.notes as any;
   if (input.projectId !== undefined) updates.projectId = input.projectId as any;
+  if (input.groupId !== undefined) updates.groupId = input.groupId as any;
   if (input.priority !== undefined) updates.priority = input.priority;
   if (input.status !== undefined) updates.status = input.status;
   if (input.isFocus !== undefined) updates.isFocus = input.isFocus;
-  if (input.dueDate !== undefined) updates.dueDate = input.dueDate ? new Date(input.dueDate) : null as any;
+  if (input.isMyDay !== undefined) {
+    updates.isMyDay = input.isMyDay;
+    updates.myDayDate = input.isMyDay ? (input.myDayDate ?? today) : (null as any);
+  }
+  if (input.dueDate !== undefined) updates.dueDate = input.dueDate ? new Date(input.dueDate) : (null as any);
   if (input.scheduledDate !== undefined) updates.scheduledDate = input.scheduledDate;
   if (input.recurrence !== undefined) updates.recurrence = input.recurrence;
   if (input.msTodoId !== undefined) updates.msTodoId = input.msTodoId as any;
   if (input.msListId !== undefined) updates.msListId = input.msListId as any;
   if (input.completedAt !== undefined) {
-    updates.completedAt = input.completedAt ? new Date(input.completedAt) : null as any;
+    updates.completedAt = input.completedAt ? new Date(input.completedAt) : (null as any);
   }
   if (input.status === "done" && !updates.completedAt) {
     updates.completedAt = new Date();
@@ -138,6 +156,15 @@ export async function updateTask(id: string, input: UpdateTaskInput): Promise<Ta
 
   const [task] = await db.update(tasks).set(updates).where(eq(tasks.id, id)).returning();
   return task ?? null;
+}
+
+export async function getMyDayTasks(): Promise<Task[]> {
+  const today = new Date().toISOString().split("T")[0];
+  return db
+    .select()
+    .from(tasks)
+    .where(and(eq(tasks.isMyDay, true), eq(tasks.myDayDate, today)))
+    .orderBy(asc(tasks.position));
 }
 
 export async function deleteTask(id: string) {

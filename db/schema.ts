@@ -22,16 +22,28 @@ export const projects = pgTable("projects", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
+export const taskGroups = pgTable("task_groups", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull(),
+  color: text("color").notNull().default("#6366f1"),
+  position: integer("position").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 export const tasks = pgTable("tasks", {
   id: uuid("id").defaultRandom().primaryKey(),
   title: text("title").notNull(),
   description: text("description"),
+  notes: text("notes"), // M1.1 — markdown notes on a task
   projectId: uuid("project_id").references(() => projects.id, { onDelete: "set null" }),
+  groupId: uuid("group_id").references(() => taskGroups.id, { onDelete: "set null" }), // M1.4
   status: text("status").notNull().default("todo"), // todo | in_progress | done | cancelled
   priority: integer("priority").notNull().default(2), // 1 high, 2 medium, 3 low
   aiScore: real("ai_score"),
   aiRationale: text("ai_rationale"),
   isFocus: boolean("is_focus").notNull().default(false),
+  isMyDay: boolean("is_my_day").notNull().default(false), // M1.5
+  myDayDate: date("my_day_date"), // M1.5 — tracks which calendar day it was pinned
   dueDate: timestamp("due_date", { withTimezone: true }),
   scheduledDate: date("scheduled_date"),
   recurrence: text("recurrence"), // RRULE string
@@ -154,6 +166,7 @@ export const attachments = pgTable("attachments", {
 });
 
 export type Project = typeof projects.$inferSelect;
+export type TaskGroup = typeof taskGroups.$inferSelect;
 export type Task = typeof tasks.$inferSelect;
 export type Idea = typeof ideas.$inferSelect;
 export type Event = typeof events.$inferSelect;
