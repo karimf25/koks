@@ -1,16 +1,19 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
-import { Settings } from "lucide-react";
+import { Settings, Search } from "lucide-react";
 import { NAV_ITEMS } from "./nav-items";
+import { CommandPalette } from "@/components/CommandPalette";
 
 const navItems = NAV_ITEMS;
 
 export function Sidebar() {
   const pathname = usePathname();
+  const [paletteOpen, setPaletteOpen] = useState(false);
 
   return (
     <aside
@@ -19,11 +22,21 @@ export function Sidebar() {
     >
       <div className="glass flex flex-col h-full py-4 px-3 rounded-[20px]">
         {/* Logo */}
-        <div className="px-3 mb-6">
+        <div className="px-3 mb-4">
           <span className="text-lg font-semibold tracking-tight text-[var(--cream)]">
             Life<span className="text-[var(--accent)]">OS</span>
           </span>
         </div>
+
+        {/* Search trigger */}
+        <button
+          onClick={() => setPaletteOpen(true)}
+          className="mx-0 mb-3 flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-[var(--text-3)] bg-[var(--glass)] border border-[var(--glass-border)] hover:text-[var(--text-2)] transition-colors w-full"
+        >
+          <Search className="w-3.5 h-3.5 flex-shrink-0" />
+          <span className="flex-1 text-left text-xs">Search…</span>
+          <kbd className="text-[10px] font-mono bg-[var(--glass-strong)] px-1 rounded">⌘K</kbd>
+        </button>
 
         {/* Nav */}
         <nav className="flex-1 flex flex-col gap-0.5 overflow-y-auto">
@@ -74,6 +87,8 @@ export function Sidebar() {
           <span>Settings</span>
         </Link>
       </div>
+
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
     </aside>
   );
 }

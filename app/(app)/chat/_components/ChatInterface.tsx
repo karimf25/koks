@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useTransition } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { GlassCard, GlassButton } from "@/components/glass";
-import { Send, Bot, User, Wrench, AlertCircle, Sparkles } from "lucide-react";
+import { Send, Bot, User, Wrench, AlertCircle, Sparkles, Mic, MicOff } from "lucide-react";
 
 type Message =
   | { role: "user"; content: string }
@@ -28,8 +28,37 @@ export function ChatInterface({ hasApiKey }: { hasApiKey: boolean }) {
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [sessionTokens, setSessionTokens] = useState(0);
+  const [listening, setListening] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const recognitionRef = useRef<any>(null);
+
+  const toggleVoice = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    if (listening) {
+      recognitionRef.current?.stop();
+      setListening(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognitionRef.current = recognition;
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setInput((prev) => (prev ? prev + " " + transcript : transcript));
+    };
+    recognition.onend = () => setListening(false);
+    recognition.onerror = () => setListening(false);
+
+    recognition.start();
+    setListening(true);
+  };
 
   // Scroll the messages container only — NOT the whole document. scrollIntoView
   // would scroll the page on mobile, sliding the header/title out of view.
@@ -249,7 +278,7 @@ export function ChatInterface({ hasApiKey }: { hasApiKey: boolean }) {
       </div>
 
       {/* Input */}
-      <div className="glass-card p-3 flex items-end gap-3">
+      <div className="glass-card p-3 flex items-end gap-2">
         <textarea
           ref={textareaRef}
           value={input}
@@ -269,6 +298,18 @@ export function ChatInterface({ hasApiKey }: { hasApiKey: boolean }) {
           disabled={streaming}
           className="flex-1 bg-transparent text-sm text-[var(--text)] placeholder:text-[var(--text-3)] outline-none resize-none leading-relaxed"
         />
+        <button
+          onClick={toggleVoice}
+          disabled={streaming}
+          className="flex-shrink-0 p-2 rounded-xl transition-colors"
+          style={{
+            color: listening ? "var(--accent)" : "var(--text-3)",
+            background: listening ? "color-mix(in srgb, var(--accent) 15%, transparent)" : "transparent",
+          }}
+          title={listening ? "Stop listening" : "Voice input"}
+        >
+          {listening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+        </button>
         <GlassButton
           variant="primary"
           size="sm"
