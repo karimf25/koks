@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { GlassCard, GlassButton } from "@/components/glass";
-import { Plus, BookOpen, Cpu, FileText, Lightbulb, Search, Trash2, ChevronRight, ChevronLeft } from "lucide-react";
+import { Plus, BookOpen, Cpu, FileText, Lightbulb, Search, Trash2, ChevronRight, ChevronLeft, Download } from "lucide-react";
 import type { SerializedMemoryFile } from "@/lib/serialize";
 type MemoryFile = SerializedMemoryFile;
 import { MEMORY_KINDS } from "@/lib/memory-constants";
+import { MarkdownEditor } from "@/components/MarkdownEditor";
 
 const KIND_ICONS: Record<string, React.ElementType> = {
   conversation: BookOpen,
@@ -34,8 +35,38 @@ export function VaultList({ initialFiles }: Props) {
   const [kindFilter, setKindFilter] = useState<string>("all");
   const [showForm, setShowForm] = useState(false);
   const [selected, setSelected] = useState<MemoryFile | null>(null);
+  const [editContent, setEditContent] = useState("");
+  const [contentDirty, setContentDirty] = useState(false);
   const [form, setForm] = useState({ path: "", title: "", kind: "conversation", summary: "", contentText: "" });
   const [pending, startTransition] = useTransition();
+
+  const selectFile = (f: MemoryFile) => {
+    setSelected(f);
+    setEditContent(f.contentText);
+    setContentDirty(false);
+  };
+
+  const saveContent = useCallback((file: MemoryFile, content: string) => {
+    setFiles((prev) => prev.map((f) => f.id === file.id ? { ...f, contentText: content } : f));
+    setContentDirty(false);
+    startTransition(async () => {
+      await fetch(`/api/memory/${file.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contentText: content }),
+      });
+    });
+  }, []);
+
+  const downloadFile = (file: MemoryFile) => {
+    const blob = new Blob([file.contentText], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${file.path.replace(/\//g, "_")}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const filtered = files.filter((f) => {
     if (kindFilter !== "all" && f.kind !== kindFilter) return false;
@@ -130,7 +161,7 @@ export function VaultList({ initialFiles }: Props) {
                   <GlassCard
                     interactive
                     className={`p-3 cursor-pointer group ${selected?.id === f.id ? "border-[var(--accent)]" : ""}`}
-                    onClick={() => setSelected(f)}
+                    onClick={() => selectFile(f)}
                   >
                     <div className="flex items-start gap-2">
                       <Icon className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color }} />
@@ -235,7 +266,7 @@ export function VaultList({ initialFiles }: Props) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 8 }}
               transition={spring}
-              className="glass-card p-5 h-full flex flex-col gap-3 overflow-y-auto"
+              className="glass-card p-5 h-full flex flex-col gap-3"
             >
               <button
                 onClick={() => setSelected(null)}
@@ -245,22 +276,47 @@ export function VaultList({ initialFiles }: Props) {
                 <ChevronLeft className="w-4 h-4" /> Files
               </button>
               <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs text-[var(--text-3)] font-mono">{selected.path}</p>
+                <div className="min-w-0">
+                  <p className="text-xs text-[var(--text-3)] font-mono truncate">{selected.path}</p>
                   <h2 className="text-lg font-semibold text-[var(--text)] mt-1">{selected.title}</h2>
                   {selected.summary && <p className="text-sm text-[var(--text-2)] mt-1">{selected.summary}</p>}
                 </div>
-                <span
-                  className="text-xs px-2 py-0.5 rounded-full flex-shrink-0"
-                  style={{ background: "var(--glass-strong)", color: KIND_COLORS[selected.kind] }}
-                >
-                  {selected.kind}
-                </span>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <button
+                    onClick={() => downloadFile(selected)}
+                    className="p-1.5 rounded-lg hover:bg-[var(--glass-strong)] transition-colors"
+                    title="Download .md"
+                  >
+                    <Download className="w-4 h-4 text-[var(--text-3)]" />
+                  </button>
+                  <span
+                    className="text-xs px-2 py-0.5 rounded-full"
+                    style={{ background: "var(--glass-strong)", color: KIND_COLORS[selected.kind] }}
+                  >
+                    {selected.kind}
+                  </span>
+                </div>
               </div>
-              <div className="border-t border-[var(--glass-border)] pt-3 flex-1">
-                <pre className="text-sm text-[var(--text-2)] whitespace-pre-wrap font-mono leading-relaxed">
-                  {selected.contentText || <span className="text-[var(--text-3)] italic">No content</span>}
-                </pre>
+              <div className="border-t border-[var(--glass-border)] pt-3 flex-1 overflow-hidden flex flex-col">
+                <MarkdownEditor
+                  value={editContent}
+                  onChange={(v) => { setEditContent(v); setContentDirty(true); }}
+                  onBlur={() => { if (contentDirty) saveContent(selected, editContent); }}
+                  placeholder="Write content here… (Markdown supported)"
+                  bodyClassName="flex-1 min-h-[200px]"
+                  className="flex-1 flex flex-col"
+                  toolbarRight={
+                    contentDirty ? (
+                      <button
+                        onClick={() => saveContent(selected, editContent)}
+                        className="text-xs px-2 py-0.5 rounded"
+                        style={{ background: "var(--accent)", color: "#fff" }}
+                      >
+                        Save
+                      </button>
+                    ) : undefined
+                  }
+                />
               </div>
             </motion.div>
           ) : (

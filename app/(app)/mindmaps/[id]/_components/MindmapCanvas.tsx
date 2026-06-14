@@ -19,8 +19,9 @@ import {
   type OnConnect,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import dagre from "@dagrejs/dagre";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Plus, Check, Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, Check, Loader2, Trash2, LayoutDashboard } from "lucide-react";
 import { GlassNode, type GlassNodeData } from "./GlassNode";
 import type { MindmapNode, MindmapEdge, MindmapData } from "@/lib/mindmaps";
 
@@ -29,6 +30,22 @@ interface Props {
   title: string;
   initialNodes: MindmapNode[];
   initialEdges: MindmapEdge[];
+}
+
+const NODE_W = 140;
+const NODE_H = 48;
+
+function applyDagreLayout(nodes: Node[], edges: Edge[]): Node[] {
+  const g = new dagre.graphlib.Graph();
+  g.setDefaultEdgeLabel(() => ({}));
+  g.setGraph({ rankdir: "TB", nodesep: 60, ranksep: 80 });
+  nodes.forEach((n) => g.setNode(n.id, { width: NODE_W, height: NODE_H }));
+  edges.forEach((e) => g.setEdge(e.source, e.target));
+  dagre.layout(g);
+  return nodes.map((n) => {
+    const { x, y } = g.node(n.id);
+    return { ...n, position: { x: x - NODE_W / 2, y: y - NODE_H / 2 } };
+  });
 }
 
 const NODE_COLORS = [
@@ -94,6 +111,8 @@ function Flow({ id, title, initialNodes, initialEdges }: Props) {
   const isFirstRun = useRef(true);
 
   const selectedNode = nodes.find((n) => n.selected);
+  const selectedEdge = edges.find((e) => e.selected);
+  const hasSelection = !!selectedNode || !!selectedEdge;
 
   const persist = useCallback(
     (patch: { title?: string; data?: MindmapData }) => {
@@ -163,6 +182,15 @@ function Flow({ id, title, initialNodes, initialEdges }: Props) {
     persist({ title: mapTitle.trim() || "Untitled map" });
   };
 
+  const deleteSelected = useCallback(() => {
+    setNodes((nds) => nds.filter((n) => !n.selected));
+    setEdges((eds) => eds.filter((e) => !e.selected));
+  }, [setNodes, setEdges]);
+
+  const autoLayout = useCallback(() => {
+    setNodes((nds) => applyDagreLayout(nds, edges));
+  }, [edges, setNodes]);
+
   return (
     <div ref={wrapperRef} className="glass h-[calc(100dvh-11rem)] lg:h-[calc(100vh-9rem)] relative overflow-hidden">
       <ReactFlow
@@ -211,6 +239,24 @@ function Flow({ id, title, initialNodes, initialEdges }: Props) {
             >
               <Plus className="w-3 h-3" /> Add node
             </button>
+            <button
+              onClick={autoLayout}
+              title="Auto-layout (Tidy up)"
+              className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg transition-colors hover:bg-[var(--glass-strong)]"
+              style={{ color: "var(--text-2)" }}
+            >
+              <LayoutDashboard className="w-3 h-3" /> Tidy up
+            </button>
+            {hasSelection && (
+              <button
+                onClick={deleteSelected}
+                title="Delete selected"
+                className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg transition-colors"
+                style={{ color: "var(--accent)", background: "var(--accent)15" }}
+              >
+                <Trash2 className="w-3 h-3" /> Delete
+              </button>
+            )}
             <SaveIndicator state={saveState} />
           </div>
         </Panel>
