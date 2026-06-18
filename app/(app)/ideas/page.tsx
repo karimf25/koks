@@ -5,7 +5,12 @@ import { IdeasBoard } from "./_components/IdeasBoard";
 
 export const metadata: Metadata = { title: "Ideas — LifeOS" };
 
-export default async function IdeasPage() {
+export default async function IdeasPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ open?: string }>;
+}) {
+  const { open } = await searchParams;
   const ideas = (await getIdeas()).map(serializeIdea);
 
   return (
@@ -14,7 +19,7 @@ export default async function IdeasPage() {
         <h1 className="text-2xl font-semibold tracking-tight text-[var(--cream)]">Ideas</h1>
         <p className="text-sm text-[var(--text-3)] mt-1">Capture, triage, and promote your ideas</p>
       </div>
-      <IdeasBoard initialIdeas={ideas} />
+      <IdeasBoard initialIdeas={ideas} openId={open} />
     </div>
   );
 }

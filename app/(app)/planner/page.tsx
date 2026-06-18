@@ -3,6 +3,7 @@ import { getLatestFocusRun } from "@/lib/focus";
 import { getTodayTasks } from "@/lib/tasks";
 import { getTodayEvents } from "@/lib/events";
 import { FocusEngine } from "./_components/FocusEngine";
+import { CoworkPlanner } from "./_components/CoworkPlanner";
 import { GlassCard } from "@/components/glass";
 import { CheckSquare, Clock } from "lucide-react";
 
@@ -27,9 +28,14 @@ export default async function PlannerPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Focus Engine */}
-        <div className="lg:col-span-2">
+        {/* AI Focus Engine */}
+        <div className="lg:col-span-1">
           <FocusEngine initialRun={focusRun as any} hasApiKey={hasApiKey} />
+        </div>
+
+        {/* Claude Code Co-work Planner */}
+        <div className="lg:col-span-1">
+          <CoworkPlanner hasApiKey={hasApiKey} />
         </div>
 
         {/* Today's tasks */}
@@ -46,7 +52,7 @@ export default async function PlannerPage() {
                   <div
                     className="w-2 h-2 rounded-full flex-shrink-0"
                     style={{
-                      background: t.priority === 1 ? "var(--accent)" : t.priority === 2 ? "var(--gold)" : "var(--slate)",
+                      background: t.priority === 1 ? "var(--p1)" : t.priority === 2 ? "var(--p2)" : "var(--p3)",
                     }}
                   />
                   <span className={`text-sm flex-1 ${t.status === "done" ? "line-through text-[var(--text-3)]" : "text-[var(--text)]"}`}>

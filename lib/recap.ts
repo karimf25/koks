@@ -12,10 +12,12 @@ export type WeekRecapData = {
   completedTitles: string[];
   tasksCreated: number;
   ideasCaptured: number;
+  ideasPromoted: number;
   notesTouched: number;
   eventsCount: number;
-  projects: { name: string; color: string | null; completed: number }[];
+  projects: { name: string; color: string | null; completed: number; total: number }[];
   byDay: { day: string; count: number }[];
+  byPriority: { p1: number; p2: number; p3: number };
   bestDay: string | null;
 };
 
@@ -24,7 +26,7 @@ export async function getWeekRecap(weekOffset = 0): Promise<WeekRecapData> {
   const weekStart = startOfWeek(anchor, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(anchor, { weekStartsOn: 1 });
 
-  const [completed, created, capturedIdeas, touchedNotes, weekEvents, allProjects] =
+  const [completed, created, capturedIdeas, promotedIdeas, touchedNotes, weekEvents, allProjects, allTasks] =
     await Promise.all([
       db
         .select()
@@ -47,6 +49,14 @@ export async function getWeekRecap(weekOffset = 0): Promise<WeekRecapData> {
         .where(and(gte(ideas.createdAt, weekStart), lte(ideas.createdAt, weekEnd))),
       db
         .select()
+        .from(ideas)
+        .where(and(
+          eq(ideas.status, "promoted"),
+          gte(ideas.updatedAt, weekStart),
+          lte(ideas.updatedAt, weekEnd)
+        )),
+      db
+        .select()
         .from(notes)
         .where(and(gte(notes.updatedAt, weekStart), lte(notes.updatedAt, weekEnd))),
       db
@@ -54,6 +64,7 @@ export async function getWeekRecap(weekOffset = 0): Promise<WeekRecapData> {
         .from(events)
         .where(and(gte(events.start, weekStart), lte(events.start, weekEnd))),
       db.select().from(projects),
+      db.select({ id: tasks.id, projectId: tasks.projectId, status: tasks.status }).from(tasks),
     ]);
 
   // Completions per project, sorted by count
@@ -61,13 +72,30 @@ export async function getWeekRecap(weekOffset = 0): Promise<WeekRecapData> {
   for (const t of completed) {
     if (t.projectId) byProject.set(t.projectId, (byProject.get(t.projectId) ?? 0) + 1);
   }
+  const totalByProject = new Map<string, number>();
+  for (const t of allTasks) {
+    if (t.projectId) totalByProject.set(t.projectId, (totalByProject.get(t.projectId) ?? 0) + 1);
+  }
   const projectStats = [...byProject.entries()]
     .map(([id, count]) => {
       const p = allProjects.find((x) => x.id === id);
-      return { name: p?.name ?? "Unknown", color: p?.color ?? null, completed: count };
+      return {
+        name: p?.name ?? "Unknown",
+        color: p?.color ?? null,
+        completed: count,
+        total: totalByProject.get(id) ?? count,
+      };
     })
     .sort((a, b) => b.completed - a.completed)
     .slice(0, 5);
+
+  // Priority breakdown for completed tasks
+  const byPriority = { p1: 0, p2: 0, p3: 0 };
+  for (const t of completed) {
+    if (t.priority === 1) byPriority.p1++;
+    else if (t.priority === 2) byPriority.p2++;
+    else byPriority.p3++;
+  }
 
   // Completions per weekday (Mon..Sun)
   const dayCounts = [0, 0, 0, 0, 0, 0, 0];
@@ -90,10 +118,12 @@ export async function getWeekRecap(weekOffset = 0): Promise<WeekRecapData> {
     completedTitles: completed.slice(0, 6).map((t) => t.title),
     tasksCreated: created.length,
     ideasCaptured: capturedIdeas.length,
+    ideasPromoted: promotedIdeas.length,
     notesTouched: touchedNotes.length,
     eventsCount: weekEvents.length,
     projects: projectStats,
     byDay,
+    byPriority,
     bestDay,
   };
 }

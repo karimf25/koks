@@ -7,9 +7,9 @@ interface PriorityDotProps {
 }
 
 const priorityConfig = {
-  1: { color: "bg-[var(--accent)]", label: "High", glow: "shadow-[0_0_6px_rgba(242,116,5,0.6)]" },
-  2: { color: "bg-[var(--amber)]", label: "Medium", glow: "" },
-  3: { color: "bg-[var(--slate)]", label: "Low", glow: "" },
+  1: { color: "bg-[var(--p1)]", label: "High", glow: "shadow-[0_0_6px_rgba(229,53,58,0.7)]" },
+  2: { color: "bg-[var(--p2)]", label: "Medium", glow: "" },
+  3: { color: "bg-[var(--p3)]", label: "Low", glow: "" },
 } as const;
 
 const sizeStyles = { sm: "w-1.5 h-1.5", md: "w-2 h-2" };

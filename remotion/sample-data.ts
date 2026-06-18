@@ -17,12 +17,13 @@ export const SAMPLE_RECAP: WeekRecapData = {
   ],
   tasksCreated: 18,
   ideasCaptured: 4,
+  ideasPromoted: 2,
   notesTouched: 6,
   eventsCount: 9,
   projects: [
-    { name: "EmpowerU", color: "#F27405", completed: 5 },
-    { name: "University", color: "#20878E", completed: 4 },
-    { name: "Personal", color: "#D98D30", completed: 3 },
+    { name: "EmpowerU", color: "#F27405", completed: 5, total: 12 },
+    { name: "University", color: "#20878E", completed: 4, total: 8 },
+    { name: "Personal", color: "#D98D30", completed: 3, total: 6 },
   ],
   byDay: [
     { day: "Mon", count: 1 },
@@ -33,5 +34,6 @@ export const SAMPLE_RECAP: WeekRecapData = {
     { day: "Sat", count: 1 },
     { day: "Sun", count: 0 },
   ],
+  byPriority: { p1: 3, p2: 6, p3: 3 },
   bestDay: "Thu",
 };

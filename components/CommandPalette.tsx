@@ -16,10 +16,10 @@ type FlatResult = { type: "task" | "project" | "idea" | "note"; id: string; titl
 
 function flatten(data: SearchResult): FlatResult[] {
   return [
-    ...data.tasks.map((t) => ({ type: "task" as const, id: t.id, title: t.title, href: "/tasks" })),
+    ...data.tasks.map((t) => ({ type: "task" as const, id: t.id, title: t.title, href: `/tasks?task=${t.id}` })),
     ...data.projects.map((p) => ({ type: "project" as const, id: p.id, title: p.title, href: `/projects/${p.id}` })),
-    ...data.ideas.map((i) => ({ type: "idea" as const, id: i.id, title: i.title, href: "/ideas" })),
-    ...data.notes.map((n) => ({ type: "note" as const, id: n.id, title: n.title, href: "/notes" })),
+    ...data.ideas.map((i) => ({ type: "idea" as const, id: i.id, title: i.title, href: `/ideas?open=${i.id}` })),
+    ...data.notes.map((n) => ({ type: "note" as const, id: n.id, title: n.title, href: `/notes?open=${n.id}` })),
   ];
 }
 

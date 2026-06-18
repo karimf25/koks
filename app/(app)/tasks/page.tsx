@@ -7,7 +7,12 @@ import { TaskList } from "./_components/TaskList";
 
 export const metadata: Metadata = { title: "Tasks — LifeOS" };
 
-export default async function TasksPage() {
+export default async function TasksPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ task?: string }>;
+}) {
+  const { task } = await searchParams;
   const [rawTasks, rawProjects, rawGroups] = await Promise.all([
     getTasks(),
     getProjects(),
@@ -25,7 +30,7 @@ export default async function TasksPage() {
           {tasks.length} task{tasks.length !== 1 ? "s" : ""} across all projects
         </p>
       </div>
-      <TaskList initialTasks={tasks} projects={projects} initialGroups={groups} />
+      <TaskList initialTasks={tasks} projects={projects} initialGroups={groups} openTaskId={task} />
     </div>
   );
 }

@@ -35,6 +35,7 @@ interface Props {
   initialTasks: Task[];
   projects: Project[];
   initialGroups: TaskGroup[];
+  openTaskId?: string;
 }
 
 const STATUS_FILTERS = [
@@ -61,14 +62,14 @@ const GROUP_COLORS = [
   "#3b82f6", "#64748b",
 ];
 
-export function TaskList({ initialTasks, projects, initialGroups }: Props) {
+export function TaskList({ initialTasks, projects, initialGroups, openTaskId }: Props) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [groups, setGroups] = useState<TaskGroup[]>(initialGroups);
   const [tab, setTab] = useState<"all" | "my_day" | "groups">("all");
   const [filter, setFilter] = useState<string>("all");
   const [newTitle, setNewTitle] = useState("");
   const [newPriority, setNewPriority] = useState(2);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(openTaskId ?? null);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [newGroupName, setNewGroupName] = useState("");
   const [showNewGroup, setShowNewGroup] = useState(false);

@@ -6,7 +6,12 @@ import { NotesView } from "./_components/NotesView";
 
 export const metadata: Metadata = { title: "Notes — LifeOS" };
 
-export default async function NotesPage() {
+export default async function NotesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ open?: string }>;
+}) {
+  const { open } = await searchParams;
   const [rawNotes, rawProjects] = await Promise.all([getNotes(), getProjects()]);
   const notes = rawNotes.map(serializeNote);
   const projects = rawProjects.map(serializeProject);
@@ -19,7 +24,7 @@ export default async function NotesPage() {
           {notes.length} note{notes.length !== 1 ? "s" : ""} · Markdown, linked to projects
         </p>
       </div>
-      <NotesView initialNotes={notes} projects={projects} />
+      <NotesView initialNotes={notes} projects={projects} openId={open} />
     </div>
   );
 }

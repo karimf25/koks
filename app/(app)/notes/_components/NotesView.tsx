@@ -15,16 +15,15 @@ type Project = SerializedProject;
 interface Props {
   initialNotes: Note[];
   projects: Project[];
+  openId?: string;
 }
 
 const spring = { type: "spring", stiffness: 260, damping: 26 } as const;
 type SaveState = "idle" | "saving" | "saved";
 
-export function NotesView({ initialNotes, projects }: Props) {
+export function NotesView({ initialNotes, projects, openId }: Props) {
   const [notes, setNotes] = useState<Note[]>(initialNotes);
-  // Start on the list (null) so mobile shows the list first; on desktop both
-  // panels are visible side by side regardless.
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(openId ?? null);
   const [search, setSearch] = useState("");
   const [pending, startTransition] = useTransition();
 

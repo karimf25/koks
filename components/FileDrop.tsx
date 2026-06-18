@@ -48,14 +48,14 @@ export function FileDrop({ ownerType, ownerId, initial = [], onChange, compact }
       if (!urlRes.ok) throw new Error("Could not start upload");
       const { path, signedUrl } = await urlRes.json();
 
-      // 2. PUT the file straight to Supabase Storage (mirrors supabase-js uploadToSignedUrl).
-      const form = new FormData();
-      form.append("cacheControl", "3600");
-      form.append("", file);
+      // 2. PUT the file straight to Supabase Storage (direct binary body, not FormData).
       const putRes = await fetch(signedUrl, {
         method: "PUT",
-        headers: { "x-upsert": "false" },
-        body: form,
+        headers: {
+          "Content-Type": file.type || "application/octet-stream",
+          "x-upsert": "false",
+        },
+        body: file,
       });
       if (!putRes.ok) throw new Error("Upload failed");
 

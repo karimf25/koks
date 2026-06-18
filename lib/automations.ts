@@ -169,6 +169,7 @@ async function executeAction(
       priority: action.priority ?? 2,
       dueDate,
       source: "automation",
+      isMyDay: true,
     });
     return { taskId: task.id, title: task.title };
   }

@@ -32,19 +32,94 @@ interface Props {
   initialEdges: MindmapEdge[];
 }
 
-const NODE_W = 140;
+const NODE_W = 160;
 const NODE_H = 48;
+const H_GAP = 60;
+const V_GAP = 80;
 
+/**
+ * Layout strategy:
+ * 1. Build connected components (handle disconnected sub-graphs).
+ * 2. For each component, find roots (nodes with no incoming edges).
+ *    If none (cycle), pick the node with the most outgoing edges.
+ * 3. Run dagre LR on each component independently.
+ * 4. Stack components top-to-bottom with breathing room.
+ */
 function applyDagreLayout(nodes: Node[], edges: Edge[]): Node[] {
-  const g = new dagre.graphlib.Graph();
-  g.setDefaultEdgeLabel(() => ({}));
-  g.setGraph({ rankdir: "TB", nodesep: 60, ranksep: 80 });
-  nodes.forEach((n) => g.setNode(n.id, { width: NODE_W, height: NODE_H }));
-  edges.forEach((e) => g.setEdge(e.source, e.target));
-  dagre.layout(g);
+  if (nodes.length === 0) return nodes;
+
+  // Build adjacency and reverse-adjacency maps
+  const adj = new Map<string, string[]>();
+  const inDegree = new Map<string, number>();
+  nodes.forEach((n) => { adj.set(n.id, []); inDegree.set(n.id, 0); });
+  edges.forEach((e) => {
+    if (!adj.has(e.source) || !adj.has(e.target)) return;
+    adj.get(e.source)!.push(e.target);
+    inDegree.set(e.target, (inDegree.get(e.target) ?? 0) + 1);
+  });
+
+  // Find connected components via BFS (ignoring edge direction)
+  const adjUndirected = new Map<string, Set<string>>();
+  nodes.forEach((n) => adjUndirected.set(n.id, new Set()));
+  edges.forEach((e) => {
+    if (!adjUndirected.has(e.source) || !adjUndirected.has(e.target)) return;
+    adjUndirected.get(e.source)!.add(e.target);
+    adjUndirected.get(e.target)!.add(e.source);
+  });
+
+  const visited = new Set<string>();
+  const components: string[][] = [];
+  for (const node of nodes) {
+    if (visited.has(node.id)) continue;
+    const component: string[] = [];
+    const queue = [node.id];
+    while (queue.length > 0) {
+      const id = queue.shift()!;
+      if (visited.has(id)) continue;
+      visited.add(id);
+      component.push(id);
+      adjUndirected.get(id)?.forEach((nb) => { if (!visited.has(nb)) queue.push(nb); });
+    }
+    components.push(component);
+  }
+
+  // Layout each component
+  const positionMap = new Map<string, { x: number; y: number }>();
+  let currentY = 0;
+
+  for (const component of components) {
+    const compNodes = nodes.filter((n) => component.includes(n.id));
+    const compEdges = edges.filter(
+      (e) => component.includes(e.source) && component.includes(e.target)
+    );
+
+    const g = new dagre.graphlib.Graph();
+    g.setDefaultEdgeLabel(() => ({}));
+    g.setGraph({ rankdir: "LR", nodesep: H_GAP, ranksep: V_GAP, align: "UL" });
+    compNodes.forEach((n) => g.setNode(n.id, { width: NODE_W, height: NODE_H }));
+    compEdges.forEach((e) => g.setEdge(e.source, e.target));
+    dagre.layout(g);
+
+    let minY = Infinity;
+    compNodes.forEach((n) => {
+      const { y } = g.node(n.id);
+      minY = Math.min(minY, y);
+    });
+
+    let maxY = -Infinity;
+    compNodes.forEach((n) => {
+      const pos = g.node(n.id);
+      const absY = currentY + pos.y - minY;
+      positionMap.set(n.id, { x: pos.x - NODE_W / 2, y: absY - NODE_H / 2 });
+      maxY = Math.max(maxY, absY);
+    });
+
+    currentY = maxY + NODE_H + V_GAP * 2;
+  }
+
   return nodes.map((n) => {
-    const { x, y } = g.node(n.id);
-    return { ...n, position: { x: x - NODE_W / 2, y: y - NODE_H / 2 } };
+    const pos = positionMap.get(n.id);
+    return pos ? { ...n, position: pos } : n;
   });
 }
 
@@ -72,6 +147,8 @@ function toFlowEdges(edges: MindmapEdge[]): Edge[] {
     id: e.id,
     source: e.source,
     target: e.target,
+    sourceHandle: e.sourceHandle ?? null,
+    targetHandle: e.targetHandle ?? null,
     label: e.label,
   }));
 }
@@ -91,6 +168,8 @@ function serialize(nodes: Node[], edges: Edge[]): MindmapData {
       id: e.id,
       source: e.source,
       target: e.target,
+      sourceHandle: typeof e.sourceHandle === "string" ? e.sourceHandle : undefined,
+      targetHandle: typeof e.targetHandle === "string" ? e.targetHandle : undefined,
       label: typeof e.label === "string" ? e.label : undefined,
     })),
   };
