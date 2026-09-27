@@ -459,11 +459,9 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// MCP clients open a GET to listen for server-sent events. This server has none, and the
+// spec says to answer 405 so the client stops asking. A 200 here made every open Claude
+// session reconnect in a loop: ~1.1M invocations a month, which paused the Vercel account.
 export async function GET() {
-  return NextResponse.json({
-    name: "lifeos-mcp",
-    version: "1.0.0",
-    transport: "http-post",
-    endpoint: "/api/mcp",
-  });
+  return new NextResponse(null, { status: 405, headers: { Allow: "POST" } });
 }
